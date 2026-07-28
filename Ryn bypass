@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT (VERSION 2.5 - SYNTAX FIXED)
+-- TSB ANTI-LAG & DUAL FREEZE SCRIPT (VERSION 2.6)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -10,7 +10,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 ---------------------------------------------------------
--- 1. TẠO GUI (TIÊU ĐỀ PHIÊN BẢN, NÚT ANTI-LAG & FREEZE)
+-- 1. TẠO GUI (TIÊU ĐỀ PHIÊN BẢN, 3 NÚT TÍNH NĂNG)
 ---------------------------------------------------------
 if PlayerGui:FindFirstChild("TSB_Custom_Tools_Gui") then
     PlayerGui.TSB_Custom_Tools_Gui:Destroy()
@@ -21,13 +21,13 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (VERSION 2.5)
+-- NHÃN HIỂN THỊ PHIÊN BẢN (VERSION 2.6)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 160, 0, 25)
 VersionLabel.Position = UDim2.new(0, 10, 0.4, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v2.5"
+VersionLabel.Text = "📌 TSB Tool v2.6"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
 VersionLabel.Active = true
@@ -49,19 +49,33 @@ AntiLagBtn.Draggable = true
 AntiLagBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 2: FREEZE SPAWN POINT & INSTANT KILL CREDIT
-local FreezeBtn = Instance.new("TextButton")
-FreezeBtn.Size = UDim2.new(0, 160, 0, 40)
-FreezeBtn.Position = UDim2.new(0, 10, 0.4, 45)
-FreezeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-FreezeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-FreezeBtn.Text = "❄️ Freeze (Spawn): OFF"
-FreezeBtn.Font = Enum.Font.GothamBold
-FreezeBtn.TextSize = 13
-FreezeBtn.Active = true
-FreezeBtn.Draggable = true
-FreezeBtn.Parent = ScreenGui
-Instance.new("UICorner", FreezeBtn).CornerRadius = UDim.new(0, 8)
+-- NÚT 2: FREEZE SPAWN + AUTO DIE (NÚT CŨ - TỰ SÁT KHI MẤT MÁU)
+local FreezeAutoDieBtn = Instance.new("TextButton")
+FreezeAutoDieBtn.Size = UDim2.new(0, 160, 0, 40)
+FreezeAutoDieBtn.Position = UDim2.new(0, 10, 0.4, 45)
+FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+FreezeAutoDieBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FreezeAutoDieBtn.Text = "💀 Freeze + Auto Die: OFF"
+FreezeAutoDieBtn.Font = Enum.Font.GothamBold
+FreezeAutoDieBtn.TextSize = 12
+FreezeAutoDieBtn.Active = true
+FreezeAutoDieBtn.Draggable = true
+FreezeAutoDieBtn.Parent = ScreenGui
+Instance.new("UICorner", FreezeAutoDieBtn).CornerRadius = UDim.new(0, 8)
+
+-- NÚT 3: FREEZE ONLY (NÚT MỚI - CHỈ CỐ ĐỊNH TỌA ĐỘ)
+local FreezeOnlyBtn = Instance.new("TextButton")
+FreezeOnlyBtn.Size = UDim2.new(0, 160, 0, 40)
+FreezeOnlyBtn.Position = UDim2.new(0, 10, 0.4, 90)
+FreezeOnlyBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+FreezeOnlyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FreezeOnlyBtn.Text = "🧊 Freeze Pure: OFF"
+FreezeOnlyBtn.Font = Enum.Font.GothamBold
+FreezeOnlyBtn.TextSize = 12
+FreezeOnlyBtn.Active = true
+FreezeOnlyBtn.Draggable = true
+FreezeOnlyBtn.Parent = ScreenGui
+Instance.new("UICorner", FreezeOnlyBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
 -- 2. LOGIC ANTI-LAG & CLEAR CLOUDS
@@ -194,28 +208,39 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. LOGIC FREEZE (TỌA ĐỘ MỚI) & KILL CREDIT
+-- 3. TỌA ĐỘ CFRAME & TÍNH NĂNG FREEZE
 ---------------------------------------------------------
-local isFrozen = false
-local freezeConnection = nil
-local hitDetector = nil
-local isDying = false
-
--- Tọa độ CFrame từ ảnh bạn gửi
-local targetCFrame = CFrame.new(
+-- Tọa độ CFrame từ ảnh 1 (dùng cho Freeze Auto Die)
+local targetCFrame1 = CFrame.new(
     439.180542, 439.511902, -375.309557,
     0.736803472, -4.96859727e-08, 0.676106989,
     -3.74575819e-08, 1, 1.14308612e-07,
     -0.676106989, -1.09542017e-07, 0.736803472
 )
 
+-- Tọa độ CFrame MỚI từ ảnh 2 (dùng cho Freeze Pure - Nút 3)
+local targetCFrame2 = CFrame.new(
+    437.820496, 439.511902, -376.999542,
+    -0.741123915, 2.3805649e-08, -0.671368241,
+    1.33074112e-08, 1, 2.07683453e-08,
+    0.671368241, 6.45233154e-09, -0.741123915
+)
+
+---------------------------------------------------------
+-- 3A. LOGIC NÚT 2: FREEZE + AUTO DIE (NÚT CỦ)
+---------------------------------------------------------
+local isAutoDieFrozen = false
+local autoDieConnection = nil
+local hitDetector = nil
+local isDying = false
+
 local function triggerKillCreditDeath()
     if isDying then return end
     isDying = true
 
-    if freezeConnection then
-        freezeConnection:Disconnect()
-        freezeConnection = nil
+    if autoDieConnection then
+        autoDieConnection:Disconnect()
+        autoDieConnection = nil
     end
 
     task.wait(0.02)
@@ -242,33 +267,102 @@ local function setupHitDetection(char)
     local currentHp = hum.Health
 
     hitDetector = hum.HealthChanged:Connect(function(newHp)
-        if isFrozen and newHp < currentHp and not isDying then
+        if isAutoDieFrozen and newHp < currentHp and not isDying then
             triggerKillCreditDeath()
         end
         currentHp = newHp
     end)
     
     char.ChildAdded:Connect(function(child)
-        if isFrozen and not isDying and (child.Name == "Ragdoll" or child.Name == "Knockback" or child.Name == "Stun") then
+        if isAutoDieFrozen and not isDying and (child.Name == "Ragdoll" or child.Name == "Knockback" or child.Name == "Stun") then
             triggerKillCreditDeath()
         end
     end)
 end
 
+FreezeAutoDieBtn.MouseButton1Click:Connect(function()
+    isAutoDieFrozen = not isAutoDieFrozen
+    
+    if isAutoDieFrozen then
+        FreezeAutoDieBtn.Text = "💀 Freeze + Auto Die: ON"
+        FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        isDying = false
+        
+        setupHitDetection(LocalPlayer.Character)
+        
+        if autoDieConnection then autoDieConnection:Disconnect() end
+        autoDieConnection = RunService.RenderStepped:Connect(function()
+            if not isDying then
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    local hrp = char.HumanoidRootPart
+                    hrp.CFrame = targetCFrame1
+                    hrp.AssemblyLinearVelocity = Vector3.zero
+                    hrp.AssemblyAngularVelocity = Vector3.zero
+                end
+            end
+        end)
+    else
+        FreezeAutoDieBtn.Text = "💀 Freeze + Auto Die: OFF"
+        FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        isDying = false
+        
+        if autoDieConnection then autoDieConnection:Disconnect() autoDieConnection = nil end
+        if hitDetector then hitDetector:Disconnect() hitDetector = nil end
+    end
+end)
+
+---------------------------------------------------------
+-- 3B. LOGIC NÚT 3: FREEZE PURE (NÚT MỚI - CHỈ CỐ ĐỊNH TỌA ĐỘ)
+---------------------------------------------------------
+local isPureFrozen = false
+local pureFreezeConnection = nil
+
+FreezeOnlyBtn.MouseButton1Click:Connect(function()
+    isPureFrozen = not isPureFrozen
+    
+    if isPureFrozen then
+        FreezeOnlyBtn.Text = "🧊 Freeze Pure: ON"
+        FreezeOnlyBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        
+        if pureFreezeConnection then pureFreezeConnection:Disconnect() end
+        pureFreezeConnection = RunService.RenderStepped:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local hrp = char.HumanoidRootPart
+                hrp.CFrame = targetCFrame2
+                hrp.AssemblyLinearVelocity = Vector3.zero
+                hrp.AssemblyAngularVelocity = Vector3.zero
+            end
+        end)
+    else
+        FreezeOnlyBtn.Text = "🧊 Freeze Pure: OFF"
+        FreezeOnlyBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        
+        if pureFreezeConnection then
+            pureFreezeConnection:Disconnect()
+            pureFreezeConnection = nil
+        end
+    end
+end)
+
+---------------------------------------------------------
+-- TỰ ĐỘNG KHÔI PHỤC KHI HỒI SINH
+---------------------------------------------------------
 LocalPlayer.CharacterAdded:Connect(function(char)
     isDying = false
     
-    if isFrozen then
+    if isAutoDieFrozen then
         task.wait(0.05)
         setupHitDetection(char)
         
-        if not freezeConnection then
-            freezeConnection = RunService.RenderStepped:Connect(function()
+        if not autoDieConnection then
+            autoDieConnection = RunService.RenderStepped:Connect(function()
                 if not isDying then
                     local curChar = LocalPlayer.Character
                     if curChar and curChar:FindFirstChild("HumanoidRootPart") then
                         local hrp = curChar.HumanoidRootPart
-                        hrp.CFrame = targetCFrame
+                        hrp.CFrame = targetCFrame1
                         hrp.AssemblyLinearVelocity = Vector3.zero
                         hrp.AssemblyAngularVelocity = Vector3.zero
                     end
@@ -276,36 +370,18 @@ LocalPlayer.CharacterAdded:Connect(function(char)
             end)
         end
     end
-end)
-
-FreezeBtn.MouseButton1Click:Connect(function()
-    isFrozen = not isFrozen
     
-    if isFrozen then
-        FreezeBtn.Text = "❄️ Freeze (Spawn): ON"
-        FreezeBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
-        isDying = false
-        
-        setupHitDetection(LocalPlayer.Character)
-        
-        if freezeConnection then freezeConnection:Disconnect() end
-        freezeConnection = RunService.RenderStepped:Connect(function()
-            if not isDying then
-                local char = LocalPlayer.Character
-                if char and char:FindFirstChild("HumanoidRootPart") then
-                    local hrp = char.HumanoidRootPart
-                    hrp.CFrame = targetCFrame
+    if isPureFrozen then
+        if not pureFreezeConnection then
+            pureFreezeConnection = RunService.RenderStepped:Connect(function()
+                local curChar = LocalPlayer.Character
+                if curChar and curChar:FindFirstChild("HumanoidRootPart") then
+                    local hrp = curChar.HumanoidRootPart
+                    hrp.CFrame = targetCFrame2
                     hrp.AssemblyLinearVelocity = Vector3.zero
                     hrp.AssemblyAngularVelocity = Vector3.zero
                 end
-            end
-        end)
-    else
-        FreezeBtn.Text = "❄️ Freeze (Spawn): OFF"
-        FreezeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-        isDying = false
-        
-        if freezeConnection then freezeConnection:Disconnect() freezeConnection = nil end
-        if hitDetector then hitDetector:Disconnect() hitDetector = nil end
+            end)
+        end
     end
 end)
