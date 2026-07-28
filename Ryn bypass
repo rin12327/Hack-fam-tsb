@@ -1,1 +1,198 @@
-Here
+-- =========================================================
+-- TSB ANTI-LAG & CLEAR CLOUDS SCRIPT (TOGGLE BUTTON)
+-- =========================================================
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local antiLagEnabled = false
+local connections = {}
+local hiddenObjects = {} -- Lưu lại trạng thái Part/MeshPart để khôi phục khi TẮT
+
+-- 1. XÓA HOÀN TOÀN MÂY (CLOUDS) TRONG MAP & LIGHTING
+local function removeAllClouds()
+    pcall(function()
+        -- Xóa Clouds/Sky trong Lighting
+        for _, v in ipairs(Lighting:GetChildren()) do
+            if v:IsA("Clouds") or v:IsA("Sky") then
+                v:Destroy()
+            end
+        end
+        -- Xóa Clouds hoặc Part có tên chứa "cloud" trong Workspace
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("Clouds") or (v:IsA("BasePart") and string.find(string.lower(v.Name), "cloud")) then
+                v:Destroy()
+            end
+        end
+    end)
+end
+
+-- Kiểm tra xem đối tượng có thuộc Nhân vật hay không
+local function isCharacter(obj)
+    if not obj then return false end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.Character and (obj == plr.Character or obj:IsDescendantOf(plr.Character)) then
+            return true
+        end
+    end
+    return false
+end
+
+-- Tạo sàn an toàn chống rơi Void
+local function createAntiVoidFloor()
+    if not Workspace:FindFirstChild("AntiVoidSafetyFloor") then
+        local floor = Instance.new("Part")
+        floor.Name = "AntiVoidSafetyFloor"
+        floor.Size = Vector3.new(200000, 20, 200000)
+        floor.Position = Vector3.new(0, -20, 0)
+        floor.Anchored = true
+        floor.CanCollide = true
+        floor.Material = Enum.Material.SmoothPlastic
+        floor.Transparency = 1
+        floor.Parent = Workspace
+    end
+end
+
+-- Xử lý vật thể khi BẬT Anti-Lag
+local function processObject(obj)
+    if not obj or not antiLagEnabled then return end
+    pcall(function()
+        if obj.Name == "AntiVoidSafetyFloor" or obj:IsA("Camera") or obj:IsA("Terrain") then return end
+
+        -- Xóa mây nếu phát hiện xuất hiện trong map
+        if obj:IsA("Clouds") or (obj:IsA("BasePart") and string.find(string.lower(obj.Name), "cloud")) then
+            obj:Destroy()
+            return
+        end
+
+        -- Giữ nguyên hình dáng nhân vật người chơi
+        if isCharacter(obj) then return end
+
+        -- Xóa các hiệu ứng hạt gây tụt FPS
+        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") 
+            or obj:IsA("Fire") or obj:IsA("Sparkles") or obj:IsA("Highlight") 
+            or obj:IsA("Beam") or obj:IsA("Decal") or obj:IsA("Texture") then
+            obj:Destroy()
+            return
+        end
+
+        -- Làm mịn & ẩn Part map
+        if obj:IsA("BasePart") or obj:IsA("MeshPart") then
+            if not hiddenObjects[obj] then
+                hiddenObjects[obj] = {
+                    Transparency = obj.Transparency,
+                    Material = obj.Material,
+                    CastShadow = obj.CastShadow,
+                    CanCollide = obj.CanCollide
+                }
+            end
+            obj.Material = Enum.Material.SmoothPlastic
+            obj.Reflectance = 0
+            obj.CastShadow = false
+            obj.Transparency = 1
+            obj.CanCollide = false
+            if obj:IsA("MeshPart") then
+                obj.RenderFidelity = Enum.RenderFidelity.Performance
+            end
+        end
+    end)
+end
+
+-- BẬT Anti-Lag
+local function enableAntiLag()
+    antiLagEnabled = true
+    createAntiVoidFloor()
+    removeAllClouds()
+
+    pcall(function()
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        Lighting.Brightness = 1
+        Lighting.ClockTime = 12
+        for _, v in ipairs(Lighting:GetChildren()) do
+            if v:IsA("Sky") or v:IsA("Clouds") or v:IsA("PostEffect") or v:IsA("Atmosphere") then
+                v:Destroy()
+            end
+        end
+        if Workspace.Terrain then Workspace.Terrain:Clear() end
+    end)
+
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        processObject(v)
+    end
+
+    -- Tự động lọc các vật thể mới tạo ra trong khi chơi
+    local conn = Workspace.DescendantAdded:Connect(function(child)
+        if antiLagEnabled then
+            task.wait(0.02)
+            processObject(child)
+        end
+    end)
+    table.insert(connections, conn)
+end
+
+-- TẮT Anti-Lag (Khôi phục lại Map ban đầu)
+local function disableAntiLag()
+    antiLagEnabled = false
+
+    for _, conn in ipairs(connections) do
+        conn:Disconnect()
+    end
+    connections = {}
+
+    -- Trả lại thuộc tính ban đầu cho các Part
+    for obj, data in pairs(hiddenObjects) do
+        if obj and obj.Parent then
+            pcall(function()
+                obj.Transparency = data.Transparency
+                obj.Material = data.Material
+                obj.CastShadow = data.CastShadow
+                obj.CanCollide = data.CanCollide
+            end)
+        end
+    end
+    hiddenObjects = {}
+
+    -- Xóa sàn Anti-Void
+    local floor = Workspace:FindFirstChild("AntiVoidSafetyFloor")
+    if floor then floor:Destroy() end
+end
+
+-- 2. TẠO GUI NÚT BẬT / TẮT
+if PlayerGui:FindFirstChild("AntiLag_Toggle_Gui") then
+    PlayerGui.AntiLag_Toggle_Gui:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AntiLag_Toggle_Gui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0, 160, 0, 40)
+ToggleBtn.Position = UDim2.new(0, 10, 0.5, -20)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.Text = "💥 Anti-Lag: OFF"
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.TextSize = 13
+ToggleBtn.Active = true
+ToggleBtn.Draggable = true -- Nút có thể nắm kéo di chuyển tùy ý trên màn hình
+ToggleBtn.Parent = ScreenGui
+
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+
+-- Sự kiện Click nút
+ToggleBtn.MouseButton1Click:Connect(function()
+    if not antiLagEnabled then
+        enableAntiLag()
+        ToggleBtn.Text = "⚡ Anti-Lag: ON"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+    else
+        disableAntiLag()
+        ToggleBtn.Text = "💥 Anti-Lag: OFF"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    end
+end)
