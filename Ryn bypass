@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT (UPDATED COORDS)
+-- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT (INSTANT 1-HIT DIED)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -18,7 +18,7 @@ end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "TSB_Custom_Tools_Gui"
-ScreenGui.ResetOnSpawn = false -- Giữ GUI khi hồi sinh
+ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
 -- NÚT 1: ANTI-LAG
@@ -180,12 +180,14 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. LOGIC FREEZE (TỌA ĐỘ MỚI), 1 HP & INSTANT RESPAWN
+-- 3. LOGIC FREEZE (TỌA ĐỘ ẢNH), INSTANT 1-HIT DIE & RESPAWN 0S
 ---------------------------------------------------------
 local isFrozen = false
 local freezeConnection = nil
+local healthConnection = nil
+local healthLoopConnection = nil
 
--- Tọa độ CFrame mới lấy từ ảnh của bạn
+-- Tọa độ CFrame từ ảnh
 local targetCFrame = CFrame.new(
     379.810608, 442.174805, -373.177155,
     -0.134585842, -1.59712665e-09, 0.990901947,
@@ -193,30 +195,50 @@ local targetCFrame = CFrame.new(
     -0.990901947, 7.08670557e-08, -0.134585842
 )
 
--- Hàm áp dụng máu yếu (1 HP)
-local function applyLowHealth(char)
+-- Hàm ép chết ngay lập tức khi dính đòn
+local function applyInstantOneHitLogic(char)
     if not char then return end
     local hum = char:WaitForChild("Humanoid", 3)
-    if hum then
-        hum.MaxHealth = 1
-        hum.Health = 1
-        
-        -- Lắng nghe sự kiện chết để HỒI SINH NGAY LẬP TỨC 0s
-        hum.Died:Connect(function()
-            if isFrozen then
-                task.spawn(function()
-                    LocalPlayer:LoadCharacter() -- Force respawn tức thì
-                end)
-            end
-        end)
-    end
+    if not hum then return end
+
+    -- Hủy kết nối cũ nếu có
+    if healthConnection then healthConnection:Disconnect() end
+    if healthLoopConnection then healthLoopConnection:Disconnect() end
+
+    -- Ép máu Max và Hiện tại về 1 liên tục
+    hum.MaxHealth = 1
+    hum.Health = 1
+
+    -- Lắng nghe sự kiện chết để Respawn tức thì (0s)
+    hum.Died:Connect(function()
+        if isFrozen then
+            task.spawn(function()
+                LocalPlayer:LoadCharacter()
+            end)
+        end
+    end)
+
+    -- Mẹo quan trọng: Bắt sự kiện biến đổi máu. Chỉ cần trúng 1 hit (máu giảm < 1), ép về 0 luôn!
+    healthConnection = hum.HealthChanged:Connect(function(newHealth)
+        if isFrozen and newHealth < 1 and hum.Health > 0 then
+            hum.Health = 0 -- Cho chết luôn ngay hit đầu tiên
+        end
+    end)
+
+    -- Giữ cho MaxHealth luôn là 1 để tránh bị game tự động buff máu lại
+    healthLoopConnection = RunService.Stepped:Connect(function()
+        if isFrozen and hum and hum.Parent then
+            if hum.MaxHealth ~= 1 then hum.MaxHealth = 1 end
+            if hum.Health > 1 then hum.Health = 1 end
+        end
+    end)
 end
 
--- Theo dõi mỗi khi nhân vật hồi sinh lại
+-- Tự động áp dụng lại khi vừa hồi sinh
 LocalPlayer.CharacterAdded:Connect(function(char)
     if isFrozen then
-        task.wait(0.05)
-        applyLowHealth(char)
+        task.wait(0.1)
+        applyInstantOneHitLogic(char)
     end
 end)
 
@@ -227,10 +249,10 @@ FreezeBtn.MouseButton1Click:Connect(function()
         FreezeBtn.Text = "❄️ Freeze (Spawn): ON"
         FreezeBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         
-        -- Làm yếu máu nhân vật hiện tại
-        applyLowHealth(LocalPlayer.Character)
+        -- Kích hoạt logic 1-hit die
+        applyInstantOneHitLogic(LocalPlayer.Character)
         
-        -- Khóa vị trí tại tọa độ mới
+        -- Khóa vị trí chuẩn tại tọa độ trong ảnh
         freezeConnection = RunService.RenderStepped:Connect(function()
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
@@ -244,13 +266,12 @@ FreezeBtn.MouseButton1Click:Connect(function()
         FreezeBtn.Text = "❄️ Freeze (Spawn): OFF"
         FreezeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
         
-        -- Hủy khóa vị trí
-        if freezeConnection then
-            freezeConnection:Disconnect()
-            freezeConnection = nil
-        end
+        -- Hủy khóa vị trí & logic 1-hit
+        if freezeConnection then freezeConnection:Disconnect() freezeConnection = nil end
+        if healthConnection then healthConnection:Disconnect() healthConnection = nil end
+        if healthLoopConnection then healthLoopConnection:Disconnect() healthLoopConnection = nil end
         
-        -- Khôi phục lại máu bình thường
+        -- Trả lại máu bình thường
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("Humanoid") then
             char.Humanoid.MaxHealth = 100
