@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT (REAL 1-HIT DIE)
+-- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT (TRULY 1-HIT AUTO RESPAWN)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -35,7 +35,7 @@ AntiLagBtn.Draggable = true
 AntiLagBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 2: FREEZE SPAWN POINT & INSTANT 1-HIT RESPAWN
+-- NÚT 2: FREEZE SPAWN POINT & INSTANT RESPAWN
 local FreezeBtn = Instance.new("TextButton")
 FreezeBtn.Size = UDim2.new(0, 160, 0, 40)
 FreezeBtn.Position = UDim2.new(0, 10, 0.4, 50)
@@ -164,7 +164,7 @@ local function disableAntiLag()
     end
     hiddenObjects = {}
     local floor = Workspace:FindFirstChild("AntiVoidSafetyFloor")
-    if floor then floor:Destroy() end
+    if floor me:FindFirstChild("AntiVoidSafetyFloor") then floor:Destroy() end
 end
 
 AntiLagBtn.MouseButton1Click:Connect(function()
@@ -180,11 +180,12 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. LOGIC FREEZE, CHẾT THẬT TRONG 1 HIT & AUTO RESPAWN 0S
+-- 3. LOGIC FREEZE (TỌA ĐỘ MỚI) & AUTO-RESPAWN KHI BỊ ĐÁNH
 ---------------------------------------------------------
 local isFrozen = false
 local freezeConnection = nil
-local hitDetectorConnection = nil
+local hitDetector = nil
+local isRespawning = false
 
 -- Tọa độ CFrame từ ảnh
 local targetCFrame = CFrame.new(
@@ -194,46 +195,49 @@ local targetCFrame = CFrame.new(
     -0.990901947, 7.08670557e-08, -0.134585842
 )
 
--- Hàm ép chết THẬT ngay lập tức khi trúng đòn
-local function setupRealOneHitDie(char)
+local function forceInstantRespawn()
+    if isRespawning then return end
+    isRespawning = true
+    
+    -- Thực hiện Force Respawn tức thì
+    pcall(function()
+        LocalPlayer:LoadCharacter()
+    end)
+    
+    task.wait(0.2)
+    isRespawning = false
+end
+
+local function setupHitDetection(char)
     if not char then return end
     local hum = char:WaitForChild("Humanoid", 3)
-    local head = char:WaitForChild("Head", 3)
     if not hum then return end
 
-    if hitDetectorConnection then hitDetectorConnection:Disconnect() end
+    if hitDetector then hitDetector:Disconnect() end
 
-    -- Lắng nghe sự kiện chết để hồi sinh tức thì 0s
-    hum.Died:Connect(function()
-        if isFrozen then
-            task.spawn(function()
-                LocalPlayer:LoadCharacter() -- Respawn lập tức
-            end)
+    local currentHp = hum.Health
+
+    -- Khi dính đòn (máu bị giảm), tự động Force Respawn lập tức
+    hitDetector = hum.HealthChanged:Connect(function(newHp)
+        if isFrozen and newHp < currentHp then
+            forceInstantRespawn()
         end
+        currentHp = newHp
     end)
-
-    -- Phát hiện khi bị đối thủ đánh trúng (Health giảm thật trên Server)
-    local lastHealth = hum.Health
-    hitDetectorConnection = hum.HealthChanged:Connect(function(currentHealth)
-        if isFrozen and currentHealth < lastHealth then
-            -- Bị dính đòn -> Ép Server tính là chết ngay lập tức bằng cách xóa Neck/Head ở client
-            pcall(function()
-                if head and head:FindFirstChild("Neck") then
-                    head.Neck:Destroy()
-                else
-                    char:BreakJoints() -- Ép vỡ khớp nhân vật
-                end
-            end)
+    
+    -- Dự phòng: Nếu dính Ragdoll/Knockback đặc trưng của TSB
+    char.ChildAdded:Connect(function(child)
+        if isFrozen and (child.Name == "Ragdoll" or child.Name == "Knockback" or child.Name == "Stun") then
+            forceInstantRespawn()
         end
-        lastHealth = currentHealth
     end)
 end
 
--- Tự động kích hoạt lại khi vừa hồi sinh
+-- Tự động kích hoạt lại khi vừa hồi sinh xong
 LocalPlayer.CharacterAdded:Connect(function(char)
     if isFrozen then
-        task.wait(0.1)
-        setupRealOneHitDie(char)
+        task.wait(0.05)
+        setupHitDetection(char)
     end
 end)
 
@@ -244,8 +248,7 @@ FreezeBtn.MouseButton1Click:Connect(function()
         FreezeBtn.Text = "❄️ Freeze (Spawn): ON"
         FreezeBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         
-        -- Kích hoạt logic chết ngay trong 1 hit
-        setupRealOneHitDie(LocalPlayer.Character)
+        setupHitDetection(LocalPlayer.Character)
         
         -- Khóa vị trí chuẩn tại tọa độ trong ảnh
         freezeConnection = RunService.RenderStepped:Connect(function()
@@ -261,8 +264,7 @@ FreezeBtn.MouseButton1Click:Connect(function()
         FreezeBtn.Text = "❄️ Freeze (Spawn): OFF"
         FreezeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
         
-        -- Hủy khóa vị trí
         if freezeConnection then freezeConnection:Disconnect() freezeConnection = nil end
-        if hitDetectorConnection then hitDetectorConnection:Disconnect() hitDetectorConnection = nil end
+        if hitDetector then hitDetector:Disconnect() hitDetector = nil end
     end
 end)
