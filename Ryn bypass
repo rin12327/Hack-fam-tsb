@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT (VERSION 2.4 - NEW COORDINATES)
+-- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT (VERSION 2.5 - SYNTAX FIXED)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -21,13 +21,13 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (VERSION 2.4)
+-- NHÃN HIỂN THỊ PHIÊN BẢN (VERSION 2.5)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 160, 0, 25)
 VersionLabel.Position = UDim2.new(0, 10, 0.4, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v2.4"
+VersionLabel.Text = "📌 TSB Tool v2.5"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
 VersionLabel.Active = true
@@ -194,14 +194,14 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. LOGIC FREEZE (TỌA ĐỘ MỚI TỪ ẢNH) & KILL CREDIT
+-- 3. LOGIC FREEZE (TỌA ĐỘ MỚI) & KILL CREDIT
 ---------------------------------------------------------
 local isFrozen = false
 local freezeConnection = nil
 local hitDetector = nil
 local isDying = false
 
--- Tọa độ CFrame MỚI CẬP NHẬT từ ảnh
+-- Tọa độ CFrame từ ảnh bạn gửi
 local targetCFrame = CFrame.new(
     439.180542, 439.511902, -375.309557,
     0.736803472, -4.96859727e-08, 0.676106989,
@@ -281,7 +281,7 @@ end)
 FreezeBtn.MouseButton1Click:Connect(function()
     isFrozen = not isFrozen
     
-    if isFrozen me
+    if isFrozen then
         FreezeBtn.Text = "❄️ Freeze (Spawn): ON"
         FreezeBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         isDying = false
