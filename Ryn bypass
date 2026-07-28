@@ -1,16 +1,18 @@
 -- =========================================================
--- TSB ANTI-LAG & DUAL FREEZE SCRIPT (VERSION 2.6)
+-- TSB MULTI-TOOL SCRIPT (VERSION 2.7 - AUTO SKILL 1-2-3)
 -- =========================================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 ---------------------------------------------------------
--- 1. TẠO GUI (TIÊU ĐỀ PHIÊN BẢN, 3 NÚT TÍNH NĂNG)
+-- 1. TẠO GUI (4 NÚT TÍNH NĂNG)
 ---------------------------------------------------------
 if PlayerGui:FindFirstChild("TSB_Custom_Tools_Gui") then
     PlayerGui.TSB_Custom_Tools_Gui:Destroy()
@@ -21,13 +23,13 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (VERSION 2.6)
+-- NHÃN HIỂN THỊ PHIÊN BẢN (VERSION 2.7)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 160, 0, 25)
-VersionLabel.Position = UDim2.new(0, 10, 0.4, -30)
+VersionLabel.Position = UDim2.new(0, 10, 0.35, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v2.6"
+VersionLabel.Text = "📌 TSB Tool v2.7"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
 VersionLabel.Active = true
@@ -37,36 +39,36 @@ Instance.new("UICorner", VersionLabel).CornerRadius = UDim.new(0, 8)
 
 -- NÚT 1: ANTI-LAG
 local AntiLagBtn = Instance.new("TextButton")
-AntiLagBtn.Size = UDim2.new(0, 160, 0, 40)
-AntiLagBtn.Position = UDim2.new(0, 10, 0.4, 0)
+AntiLagBtn.Size = UDim2.new(0, 160, 0, 35)
+AntiLagBtn.Position = UDim2.new(0, 10, 0.35, 0)
 AntiLagBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AntiLagBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 AntiLagBtn.Text = "💥 Anti-Lag: OFF"
 AntiLagBtn.Font = Enum.Font.GothamBold
-AntiLagBtn.TextSize = 13
+AntiLagBtn.TextSize = 12
 AntiLagBtn.Active = true
 AntiLagBtn.Draggable = true
 AntiLagBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 2: FREEZE SPAWN + AUTO DIE (NÚT CŨ - TỰ SÁT KHI MẤT MÁU)
+-- NÚT 2: FREEZE SPAWN + AUTO DIE
 local FreezeAutoDieBtn = Instance.new("TextButton")
-FreezeAutoDieBtn.Size = UDim2.new(0, 160, 0, 40)
-FreezeAutoDieBtn.Position = UDim2.new(0, 10, 0.4, 45)
+FreezeAutoDieBtn.Size = UDim2.new(0, 160, 0, 35)
+FreezeAutoDieBtn.Position = UDim2.new(0, 10, 0.35, 40)
 FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 FreezeAutoDieBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 FreezeAutoDieBtn.Text = "💀 Freeze + Auto Die: OFF"
 FreezeAutoDieBtn.Font = Enum.Font.GothamBold
-FreezeAutoDieBtn.TextSize = 12
+FreezeAutoDieBtn.TextSize = 11
 FreezeAutoDieBtn.Active = true
 FreezeAutoDieBtn.Draggable = true
 FreezeAutoDieBtn.Parent = ScreenGui
 Instance.new("UICorner", FreezeAutoDieBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 3: FREEZE ONLY (NÚT MỚI - CHỈ CỐ ĐỊNH TỌA ĐỘ)
+-- NÚT 3: FREEZE PURE
 local FreezeOnlyBtn = Instance.new("TextButton")
-FreezeOnlyBtn.Size = UDim2.new(0, 160, 0, 40)
-FreezeOnlyBtn.Position = UDim2.new(0, 10, 0.4, 90)
+FreezeOnlyBtn.Size = UDim2.new(0, 160, 0, 35)
+FreezeOnlyBtn.Position = UDim2.new(0, 10, 0.35, 80)
 FreezeOnlyBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 FreezeOnlyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 FreezeOnlyBtn.Text = "🧊 Freeze Pure: OFF"
@@ -76,6 +78,20 @@ FreezeOnlyBtn.Active = true
 FreezeOnlyBtn.Draggable = true
 FreezeOnlyBtn.Parent = ScreenGui
 Instance.new("UICorner", FreezeOnlyBtn).CornerRadius = UDim.new(0, 8)
+
+-- NÚT 4: AUTO SKILL 1-2-3 (CHECK BẤT TỬ)
+local AutoSkillBtn = Instance.new("TextButton")
+AutoSkillBtn.Size = UDim2.new(0, 160, 0, 35)
+AutoSkillBtn.Position = UDim2.new(0, 10, 0.35, 120)
+AutoSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+AutoSkillBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutoSkillBtn.Text = "⚔️ Auto Skill 1-2-3: OFF"
+AutoSkillBtn.Font = Enum.Font.GothamBold
+AutoSkillBtn.TextSize = 11
+AutoSkillBtn.Active = true
+AutoSkillBtn.Draggable = true
+AutoSkillBtn.Parent = ScreenGui
+Instance.new("UICorner", AutoSkillBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
 -- 2. LOGIC ANTI-LAG & CLEAR CLOUDS
@@ -208,9 +224,8 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. TỌA ĐỘ CFRAME & TÍNH NĂNG FREEZE
+-- 3. TỌA ĐỘ & FREEZE LOGIC
 ---------------------------------------------------------
--- Tọa độ CFrame từ ảnh 1 (dùng cho Freeze Auto Die)
 local targetCFrame1 = CFrame.new(
     439.180542, 439.511902, -375.309557,
     0.736803472, -4.96859727e-08, 0.676106989,
@@ -218,7 +233,6 @@ local targetCFrame1 = CFrame.new(
     -0.676106989, -1.09542017e-07, 0.736803472
 )
 
--- Tọa độ CFrame MỚI từ ảnh 2 (dùng cho Freeze Pure - Nút 3)
 local targetCFrame2 = CFrame.new(
     437.820496, 439.511902, -376.999542,
     -0.741123915, 2.3805649e-08, -0.671368241,
@@ -226,9 +240,7 @@ local targetCFrame2 = CFrame.new(
     0.671368241, 6.45233154e-09, -0.741123915
 )
 
----------------------------------------------------------
--- 3A. LOGIC NÚT 2: FREEZE + AUTO DIE (NÚT CỦ)
----------------------------------------------------------
+-- 3A. FREEZE AUTO DIE
 local isAutoDieFrozen = false
 local autoDieConnection = nil
 local hitDetector = nil
@@ -237,22 +249,12 @@ local isDying = false
 local function triggerKillCreditDeath()
     if isDying then return end
     isDying = true
-
-    if autoDieConnection then
-        autoDieConnection:Disconnect()
-        autoDieConnection = nil
-    end
-
+    if autoDieConnection then autoDieConnection:Disconnect() autoDieConnection = nil end
     task.wait(0.02)
-
     local char = LocalPlayer.Character
     if char then
         pcall(function()
-            if char:FindFirstChild("HumanoidRootPart") then
-                char.HumanoidRootPart:Destroy()
-            else
-                char:BreakJoints()
-            end
+            if char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart:Destroy() else char:BreakJoints() end
         end)
     end
 end
@@ -261,18 +263,12 @@ local function setupHitDetection(char)
     if not char then return end
     local hum = char:WaitForChild("Humanoid", 3)
     if not hum then return end
-
     if hitDetector then hitDetector:Disconnect() end
-
     local currentHp = hum.Health
-
     hitDetector = hum.HealthChanged:Connect(function(newHp)
-        if isAutoDieFrozen and newHp < currentHp and not isDying then
-            triggerKillCreditDeath()
-        end
+        if isAutoDieFrozen and newHp < currentHp and not isDying then triggerKillCreditDeath() end
         currentHp = newHp
     end)
-    
     char.ChildAdded:Connect(function(child)
         if isAutoDieFrozen and not isDying and (child.Name == "Ragdoll" or child.Name == "Knockback" or child.Name == "Stun") then
             triggerKillCreditDeath()
@@ -282,14 +278,11 @@ end
 
 FreezeAutoDieBtn.MouseButton1Click:Connect(function()
     isAutoDieFrozen = not isAutoDieFrozen
-    
     if isAutoDieFrozen then
         FreezeAutoDieBtn.Text = "💀 Freeze + Auto Die: ON"
         FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         isDying = false
-        
         setupHitDetection(LocalPlayer.Character)
-        
         if autoDieConnection then autoDieConnection:Disconnect() end
         autoDieConnection = RunService.RenderStepped:Connect(function()
             if not isDying then
@@ -306,25 +299,20 @@ FreezeAutoDieBtn.MouseButton1Click:Connect(function()
         FreezeAutoDieBtn.Text = "💀 Freeze + Auto Die: OFF"
         FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
         isDying = false
-        
         if autoDieConnection then autoDieConnection:Disconnect() autoDieConnection = nil end
         if hitDetector then hitDetector:Disconnect() hitDetector = nil end
     end
 end)
 
----------------------------------------------------------
--- 3B. LOGIC NÚT 3: FREEZE PURE (NÚT MỚI - CHỈ CỐ ĐỊNH TỌA ĐỘ)
----------------------------------------------------------
+-- 3B. FREEZE PURE
 local isPureFrozen = false
 local pureFreezeConnection = nil
 
 FreezeOnlyBtn.MouseButton1Click:Connect(function()
     isPureFrozen = not isPureFrozen
-    
     if isPureFrozen then
         FreezeOnlyBtn.Text = "🧊 Freeze Pure: ON"
         FreezeOnlyBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
-        
         if pureFreezeConnection then pureFreezeConnection:Disconnect() end
         pureFreezeConnection = RunService.RenderStepped:Connect(function()
             local char = LocalPlayer.Character
@@ -338,16 +326,110 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
     else
         FreezeOnlyBtn.Text = "🧊 Freeze Pure: OFF"
         FreezeOnlyBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-        
-        if pureFreezeConnection then
-            pureFreezeConnection:Disconnect()
-            pureFreezeConnection = nil
+        if pureFreezeConnection then pureFreezeConnection:Disconnect() pureFreezeConnection = nil end
+    end
+end)
+
+---------------------------------------------------------
+-- 4. LOGIC AUTO SKILL 1 - 2 - 3 (CHECK BẤT TỬ & KHOẢNG CÁCH)
+---------------------------------------------------------
+local autoSkillEnabled = false
+local autoSkillThread = nil
+
+-- Hàm giả lập ấn phím
+local function pressKey(keyCode)
+    VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+    task.wait(0.05)
+    VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+end
+
+-- Hàm kiểm tra xem Target có đang trong trạng thái BẤT TỬ / SPAWN PROTECTION không
+local function isTargetInvulnerable(targetChar)
+    if not targetChar then return true end
+    
+    -- Check các hiệu ứng / tag bất tử quen thuộc của Roblox & TSB
+    if targetChar:FindFirstChildOfClass("ForceField") then return true end
+    if targetChar:FindFirstChild("SpawnProtection") or targetChar:FindFirstChild("Invulnerable") or targetChar:FindFirstChild("Protection") then return true end
+    
+    -- Check Highlight dạng Khiên Bất Tử
+    for _, v in ipairs(targetChar:GetChildren()) do
+        if v:IsA("Highlight") and (string.find(string.lower(v.Name), "shield") or string.find(string.lower(v.Name), "spawn")) then
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- Hàm tìm đối thủ hợp lệ ở gần (Dưới 25 studs & ĐÃ MẤT BẤT TỬ)
+local function getValidTargetNear()
+    local myChar = LocalPlayer.Character
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
+    local myPos = myChar.HumanoidRootPart.Position
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Humanoid") then
+            local targetChar = plr.Character
+            local targetHum = targetChar.Humanoid
+            
+            -- Chỉ target người còn sống
+            if targetHum.Health > 0 then
+                local dist = (targetChar.HumanoidRootPart.Position - myPos).Magnitude
+                
+                -- Khoảng cách sát người (25 studs)
+                if dist <= 25 then
+                    -- KIỂM TRA ĐÃ MẤT BẤT TỬ CHƯA?
+                    if not isTargetInvulnerable(targetChar) then
+                        return targetChar
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- Vòng lặp tự động tung chiêu 1 -> 2 -> 3
+local function startAutoSkillLoop()
+    autoSkillThread = task.spawn(function()
+        while autoSkillEnabled do
+            task.wait(0.1)
+            
+            local validTarget = getValidTargetNear()
+            if validTarget then
+                -- Đã phát hiện đối thủ ở gần & HẾT BẤT TỬ -> Xả Combo Skill 1, 2, 3
+                pressKey(Enum.KeyCode.One)
+                task.wait(0.3)
+                
+                pressKey(Enum.KeyCode.Two)
+                task.wait(0.3)
+                
+                pressKey(Enum.KeyCode.Three)
+                task.wait(0.5)
+            end
+        end
+    end)
+end
+
+AutoSkillBtn.MouseButton1Click:Connect(function()
+    autoSkillEnabled = not autoSkillEnabled
+    
+    if autoSkillEnabled then
+        AutoSkillBtn.Text = "⚔️ Auto Skill 1-2-3: ON"
+        AutoSkillBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        startAutoSkillLoop()
+    else
+        AutoSkillBtn.Text = "⚔️ Auto Skill 1-2-3: OFF"
+        AutoSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        if autoSkillThread then
+            task.cancel(autoSkillThread)
+            autoSkillThread = nil
         end
     end
 end)
 
 ---------------------------------------------------------
--- TỰ ĐỘNG KHÔI PHỤC KHI HỒI SINH
+-- TỰ ĐỘNG BẬT LẠI KHI HỒI SINH
 ---------------------------------------------------------
 LocalPlayer.CharacterAdded:Connect(function(char)
     isDying = false
@@ -355,7 +437,6 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     if isAutoDieFrozen then
         task.wait(0.05)
         setupHitDetection(char)
-        
         if not autoDieConnection then
             autoDieConnection = RunService.RenderStepped:Connect(function()
                 if not isDying then
