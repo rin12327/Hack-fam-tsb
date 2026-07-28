@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT (VERSION 2.0)
+-- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT (VERSION 2.1)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -21,13 +21,13 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (VERSION 2.0)
+-- NHÃN HIỂN THỊ PHIÊN BẢN (VERSION 2.1)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 160, 0, 25)
 VersionLabel.Position = UDim2.new(0, 10, 0.4, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0) -- Màu vàng nổi bật
-VersionLabel.Text = "📌 TSB Tool v2.0"
+VersionLabel.Text = "📌 TSB Tool v2.1"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
 VersionLabel.Active = true
@@ -49,7 +49,7 @@ AntiLagBtn.Draggable = true
 AntiLagBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 2: FREEZE SPAWN POINT & INSTANT RESPAWN
+-- NÚT 2: FREEZE SPAWN POINT & VOID ON HIT
 local FreezeBtn = Instance.new("TextButton")
 FreezeBtn.Size = UDim2.new(0, 160, 0, 40)
 FreezeBtn.Position = UDim2.new(0, 10, 0.4, 45)
@@ -134,6 +134,7 @@ local function processObject(obj)
             obj.Material = Enum.Material.SmoothPlastic
             obj.Reflectance = 0
             obj.CastShadow = false
+            obj.CastShadow = false
             obj.Transparency = 1
             obj.CanCollide = false
             if obj:IsA("MeshPart") then obj.RenderFidelity = Enum.RenderFidelity.Performance end
@@ -194,12 +195,12 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. LOGIC FREEZE (TỌA ĐỘ MỚI) & AUTO-RESPAWN KHI BỊ ĐÁNH
+-- 3. LOGIC FREEZE (TỌA ĐỘ ẢNH) & DỊCH CHUYỂN VOID KHI DÍNH DAMAGE
 ---------------------------------------------------------
 local isFrozen = false
 local freezeConnection = nil
 local hitDetector = nil
-local isRespawning = false
+local isDyingInVoid = false
 
 -- Tọa độ CFrame từ ảnh của bạn
 local targetCFrame = CFrame.new(
@@ -209,16 +210,22 @@ local targetCFrame = CFrame.new(
     -0.990901947, 7.08670557e-08, -0.134585842
 )
 
-local function forceInstantRespawn()
-    if isRespawning then return end
-    isRespawning = true
+-- Hàm dịch chuyển nhân vật xuống sâu dưới Void để chết
+local function sendToVoid()
+    if isDyingInVoid then return end
+    isDyingInVoid = true
     
-    pcall(function()
-        LocalPlayer:LoadCharacter()
-    end)
+    -- Tắt tạm khóa vị trí Spawn để nhân vật rơi/chết dưới Void
+    if freezeConnection then
+        freezeConnection:Disconnect()
+        freezeConnection = nil
+    end
     
-    task.wait(0.2)
-    isRespawning = false
+    -- Teleport nhân vật xuống độ sâu -500 (Dưới Void)
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(0, -500, 0)
+    end
 end
 
 local function setupHitDetection(char)
@@ -230,24 +237,44 @@ local function setupHitDetection(char)
 
     local currentHp = hum.Health
 
+    -- 1. Bị trúng đòn làm giảm máu -> Teleport xuống Void lập tức
     hitDetector = hum.HealthChanged:Connect(function(newHp)
-        if isFrozen and newHp < currentHp then
-            forceInstantRespawn()
+        if isFrozen and newHp < currentHp and not isDyingInVoid then
+            sendToVoid()
         end
         currentHp = newHp
     end)
     
+    -- 2. Dính trạng thái Ragdoll / Knockback của TSB -> Teleport xuống Void
     char.ChildAdded:Connect(function(child)
-        if isFrozen and (child.Name == "Ragdoll" or child.Name == "Knockback" or child.Name == "Stun") then
-            forceInstantRespawn()
+        if isFrozen and not isDyingInVoid and (child.Name == "Ragdoll" or child.Name == "Knockback" or child.Name == "Stun") then
+            sendToVoid()
         end
     end)
 end
 
+-- Khi nhân vật hồi sinh lại sau khi chết dưới Void
 LocalPlayer.CharacterAdded:Connect(function(char)
+    isDyingInVoid = false
+    
     if isFrozen then
         task.wait(0.05)
         setupHitDetection(char)
+        
+        -- Khôi phục lại khóa vị trí tại điểm Spawn
+        if not freezeConnection then
+            freezeConnection = RunService.RenderStepped:Connect(function()
+                if not isDyingInVoid then
+                    local curChar = LocalPlayer.Character
+                    if curChar and curChar:FindFirstChild("HumanoidRootPart") then
+                        local hrp = curChar.HumanoidRootPart
+                        hrp.CFrame = targetCFrame
+                        hrp.AssemblyLinearVelocity = Vector3.zero
+                        hrp.AssemblyAngularVelocity = Vector3.zero
+                    end
+                end
+            end)
+        end
     end
 end)
 
@@ -257,21 +284,27 @@ FreezeBtn.MouseButton1Click:Connect(function()
     if isFrozen then
         FreezeBtn.Text = "❄️ Freeze (Spawn): ON"
         FreezeBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        isDyingInVoid = false
         
         setupHitDetection(LocalPlayer.Character)
         
+        -- Bắt đầu khóa vị trí
+        if freezeConnection then freezeConnection:Disconnect() end
         freezeConnection = RunService.RenderStepped:Connect(function()
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                local hrp = char.HumanoidRootPart
-                hrp.CFrame = targetCFrame
-                hrp.AssemblyLinearVelocity = Vector3.zero
-                hrp.AssemblyAngularVelocity = Vector3.zero
+            if not isDyingInVoid then
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    local hrp = char.HumanoidRootPart
+                    hrp.CFrame = targetCFrame
+                    hrp.AssemblyLinearVelocity = Vector3.zero
+                    hrp.AssemblyAngularVelocity = Vector3.zero
+                end
             end
         end)
     else
         FreezeBtn.Text = "❄️ Freeze (Spawn): OFF"
         FreezeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        isDyingInVoid = false
         
         if freezeConnection then freezeConnection:Disconnect() freezeConnection = nil end
         if hitDetector then hitDetector:Disconnect() hitDetector = nil end
