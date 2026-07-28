@@ -1,26 +1,66 @@
 -- =========================================================
--- TSB ANTI-LAG & CLEAR CLOUDS SCRIPT (TOGGLE BUTTON)
+-- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT
 -- =========================================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
-local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+---------------------------------------------------------
+-- 1. TẠO GUI (NÚT ANTI-LAG & NÚT FREEZE 0 0)
+---------------------------------------------------------
+if PlayerGui:FindFirstChild("TSB_Custom_Tools_Gui") then
+    PlayerGui.TSB_Custom_Tools_Gui:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TSB_Custom_Tools_Gui"
+ScreenGui.ResetOnSpawn = false -- Giữ GUI khi hồi sinh
+ScreenGui.Parent = PlayerGui
+
+-- NÚT 1: ANTI-LAG
+local AntiLagBtn = Instance.new("TextButton")
+AntiLagBtn.Size = UDim2.new(0, 160, 0, 40)
+AntiLagBtn.Position = UDim2.new(0, 10, 0.4, 0)
+AntiLagBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+AntiLagBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AntiLagBtn.Text = "💥 Anti-Lag: OFF"
+AntiLagBtn.Font = Enum.Font.GothamBold
+AntiLagBtn.TextSize = 13
+AntiLagBtn.Active = true
+AntiLagBtn.Draggable = true
+AntiLagBtn.Parent = ScreenGui
+Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
+
+-- NÚT 2: FREEZE 0,0 & 1 HP RESPAWN
+local FreezeBtn = Instance.new("TextButton")
+FreezeBtn.Size = UDim2.new(0, 160, 0, 40)
+FreezeBtn.Position = UDim2.new(0, 10, 0.4, 50)
+FreezeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+FreezeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FreezeBtn.Text = "❄️ Freeze (0,0): OFF"
+FreezeBtn.Font = Enum.Font.GothamBold
+FreezeBtn.TextSize = 13
+FreezeBtn.Active = true
+FreezeBtn.Draggable = true
+FreezeBtn.Parent = ScreenGui
+Instance.new("UICorner", FreezeBtn).CornerRadius = UDim.new(0, 8)
+
+---------------------------------------------------------
+-- 2. LOGIC ANTI-LAG & CLEAR CLOUDS
+---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
-local hiddenObjects = {} -- Lưu lại trạng thái Part/MeshPart để khôi phục khi TẮT
+local hiddenObjects = {}
 
--- 1. XÓA HOÀN TOÀN MÂY (CLOUDS) TRONG MAP & LIGHTING
 local function removeAllClouds()
     pcall(function()
-        -- Xóa Clouds/Sky trong Lighting
         for _, v in ipairs(Lighting:GetChildren()) do
-            if v:IsA("Clouds") or v:IsA("Sky") then
-                v:Destroy()
-            end
+            if v:IsA("Clouds") or v:IsA("Sky") then v:Destroy() end
         end
-        -- Xóa Clouds hoặc Part có tên chứa "cloud" trong Workspace
         for _, v in ipairs(Workspace:GetDescendants()) do
             if v:IsA("Clouds") or (v:IsA("BasePart") and string.find(string.lower(v.Name), "cloud")) then
                 v:Destroy()
@@ -29,7 +69,6 @@ local function removeAllClouds()
     end)
 end
 
--- Kiểm tra xem đối tượng có thuộc Nhân vật hay không
 local function isCharacter(obj)
     if not obj then return false end
     for _, plr in ipairs(Players:GetPlayers()) do
@@ -40,7 +79,6 @@ local function isCharacter(obj)
     return false
 end
 
--- Tạo sàn an toàn chống rơi Void
 local function createAntiVoidFloor()
     if not Workspace:FindFirstChild("AntiVoidSafetyFloor") then
         local floor = Instance.new("Part")
@@ -55,30 +93,21 @@ local function createAntiVoidFloor()
     end
 end
 
--- Xử lý vật thể khi BẬT Anti-Lag
 local function processObject(obj)
     if not obj or not antiLagEnabled then return end
     pcall(function()
         if obj.Name == "AntiVoidSafetyFloor" or obj:IsA("Camera") or obj:IsA("Terrain") then return end
-
-        -- Xóa mây nếu phát hiện xuất hiện trong map
         if obj:IsA("Clouds") or (obj:IsA("BasePart") and string.find(string.lower(obj.Name), "cloud")) then
             obj:Destroy()
             return
         end
-
-        -- Giữ nguyên hình dáng nhân vật người chơi
         if isCharacter(obj) then return end
-
-        -- Xóa các hiệu ứng hạt gây tụt FPS
         if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") 
             or obj:IsA("Fire") or obj:IsA("Sparkles") or obj:IsA("Highlight") 
             or obj:IsA("Beam") or obj:IsA("Decal") or obj:IsA("Texture") then
             obj:Destroy()
             return
         end
-
-        -- Làm mịn & ẩn Part map
         if obj:IsA("BasePart") or obj:IsA("MeshPart") then
             if not hiddenObjects[obj] then
                 hiddenObjects[obj] = {
@@ -93,56 +122,36 @@ local function processObject(obj)
             obj.CastShadow = false
             obj.Transparency = 1
             obj.CanCollide = false
-            if obj:IsA("MeshPart") then
-                obj.RenderFidelity = Enum.RenderFidelity.Performance
-            end
+            if obj:IsA("MeshPart") then obj.RenderFidelity = Enum.RenderFidelity.Performance end
         end
     end)
 end
 
--- BẬT Anti-Lag
 local function enableAntiLag()
     antiLagEnabled = true
     createAntiVoidFloor()
     removeAllClouds()
-
     pcall(function()
         Lighting.GlobalShadows = false
         Lighting.FogEnd = 9e9
         Lighting.Brightness = 1
         Lighting.ClockTime = 12
         for _, v in ipairs(Lighting:GetChildren()) do
-            if v:IsA("Sky") or v:IsA("Clouds") or v:IsA("PostEffect") or v:IsA("Atmosphere") then
-                v:Destroy()
-            end
+            if v:IsA("Sky") or v:IsA("Clouds") or v:IsA("PostEffect") or v:IsA("Atmosphere") then v:Destroy() end
         end
         if Workspace.Terrain then Workspace.Terrain:Clear() end
     end)
-
-    for _, v in ipairs(Workspace:GetDescendants()) do
-        processObject(v)
-    end
-
-    -- Tự động lọc các vật thể mới tạo ra trong khi chơi
+    for _, v in ipairs(Workspace:GetDescendants()) do processObject(v) end
     local conn = Workspace.DescendantAdded:Connect(function(child)
-        if antiLagEnabled then
-            task.wait(0.02)
-            processObject(child)
-        end
+        if antiLagEnabled then task.wait(0.02) processObject(child) end
     end)
     table.insert(connections, conn)
 end
 
--- TẮT Anti-Lag (Khôi phục lại Map ban đầu)
 local function disableAntiLag()
     antiLagEnabled = false
-
-    for _, conn in ipairs(connections) do
-        conn:Disconnect()
-    end
+    for _, conn in ipairs(connections) do conn:Disconnect() end
     connections = {}
-
-    -- Trả lại thuộc tính ban đầu cho các Part
     for obj, data in pairs(hiddenObjects) do
         if obj and obj.Parent then
             pcall(function()
@@ -154,45 +163,91 @@ local function disableAntiLag()
         end
     end
     hiddenObjects = {}
-
-    -- Xóa sàn Anti-Void
     local floor = Workspace:FindFirstChild("AntiVoidSafetyFloor")
     if floor then floor:Destroy() end
 end
 
--- 2. TẠO GUI NÚT BẬT / TẮT
-if PlayerGui:FindFirstChild("AntiLag_Toggle_Gui") then
-    PlayerGui.AntiLag_Toggle_Gui:Destroy()
-end
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AntiLag_Toggle_Gui"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = PlayerGui
-
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(0, 160, 0, 40)
-ToggleBtn.Position = UDim2.new(0, 10, 0.5, -20)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleBtn.Text = "💥 Anti-Lag: OFF"
-ToggleBtn.Font = Enum.Font.GothamBold
-ToggleBtn.TextSize = 13
-ToggleBtn.Active = true
-ToggleBtn.Draggable = true -- Nút có thể nắm kéo di chuyển tùy ý trên màn hình
-ToggleBtn.Parent = ScreenGui
-
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
-
--- Sự kiện Click nút
-ToggleBtn.MouseButton1Click:Connect(function()
+AntiLagBtn.MouseButton1Click:Connect(function()
     if not antiLagEnabled then
         enableAntiLag()
-        ToggleBtn.Text = "⚡ Anti-Lag: ON"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        AntiLagBtn.Text = "⚡ Anti-Lag: ON"
+        AntiLagBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
     else
         disableAntiLag()
-        ToggleBtn.Text = "💥 Anti-Lag: OFF"
-        ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        AntiLagBtn.Text = "💥 Anti-Lag: OFF"
+        AntiLagBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    end
+end)
+
+---------------------------------------------------------
+-- 3. LOGIC FREEZE (0,0), 1 HP & INSTANT RESPAWN
+---------------------------------------------------------
+local isFrozen = false
+local freezeConnection = nil
+
+-- Hàm áp dụng máu yếu (1 HP)
+local function applyLowHealth(char)
+    if not char then return end
+    local hum = char:WaitForChild("Humanoid", 3)
+    if hum then
+        hum.MaxHealth = 1
+        hum.Health = 1
+        
+        -- Lắng nghe sự kiện chết để HỒI SINH NGAY LẬP TỨC 0s
+        hum.Died:Connect(function()
+            if isFrozen then
+                task.spawn(function()
+                    LocalPlayer:LoadCharacter() -- Force respawn tức thì
+                end)
+            end
+        end)
+    end
+end
+
+-- Theo dõi mỗi khi nhân vật hồi sinh lại
+LocalPlayer.CharacterAdded:Connect(function(char)
+    if isFrozen then
+        task.wait(0.05)
+        applyLowHealth(char)
+    end
+end)
+
+FreezeBtn.MouseButton1Click:Connect(function()
+    isFrozen = not isFrozen
+    
+    if isFrozen then
+        FreezeBtn.Text = "❄️ Freeze (0,0): ON"
+        FreezeBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        
+        -- Làm yếu máu nhân vật hiện tại
+        applyLowHealth(LocalPlayer.Character)
+        
+        -- Khóa vị trí tại tọa độ 0, 0, 0
+        freezeConnection = RunService.RenderStepped:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local hrp = char.HumanoidRootPart
+                -- Giữ tọa độ X=0, Y=5 (để không bị lọt sàn), Z=0
+                hrp.CFrame = CFrame.new(0, 5, 0)
+                hrp.AssemblyLinearVelocity = Vector3.zero
+                hrp.AssemblyAngularVelocity = Vector3.zero
+            end
+        end)
+    else
+        FreezeBtn.Text = "❄️ Freeze (0,0): OFF"
+        FreezeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        
+        -- Hủy khóa vị trí
+        if freezeConnection then
+            freezeConnection:Disconnect()
+            freezeConnection = nil
+        end
+        
+        -- Khôi phục lại máu bình thường nếu muốn
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.MaxHealth = 100
+            char.Humanoid.Health = 100
+        end
     end
 end)
