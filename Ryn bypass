@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT
+-- TSB ANTI-LAG & FREEZE AUTO RESPAWN SCRIPT (UPDATED COORDS)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -10,7 +10,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 ---------------------------------------------------------
--- 1. TẠO GUI (NÚT ANTI-LAG & NÚT FREEZE 0 0)
+-- 1. TẠO GUI (NÚT ANTI-LAG & NÚT FREEZE)
 ---------------------------------------------------------
 if PlayerGui:FindFirstChild("TSB_Custom_Tools_Gui") then
     PlayerGui.TSB_Custom_Tools_Gui:Destroy()
@@ -35,13 +35,13 @@ AntiLagBtn.Draggable = true
 AntiLagBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 2: FREEZE 0,0 & 1 HP RESPAWN
+-- NÚT 2: FREEZE SPAWN POINT & 1 HP RESPAWN
 local FreezeBtn = Instance.new("TextButton")
 FreezeBtn.Size = UDim2.new(0, 160, 0, 40)
 FreezeBtn.Position = UDim2.new(0, 10, 0.4, 50)
 FreezeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 FreezeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-FreezeBtn.Text = "❄️ Freeze (0,0): OFF"
+FreezeBtn.Text = "❄️ Freeze (Spawn): OFF"
 FreezeBtn.Font = Enum.Font.GothamBold
 FreezeBtn.TextSize = 13
 FreezeBtn.Active = true
@@ -180,10 +180,18 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. LOGIC FREEZE (0,0), 1 HP & INSTANT RESPAWN
+-- 3. LOGIC FREEZE (TỌA ĐỘ MỚI), 1 HP & INSTANT RESPAWN
 ---------------------------------------------------------
 local isFrozen = false
 local freezeConnection = nil
+
+-- Tọa độ CFrame mới lấy từ ảnh của bạn
+local targetCFrame = CFrame.new(
+    379.810608, 442.174805, -373.177155,
+    -0.134585842, -1.59712665e-09, 0.990901947,
+    7.0448678e-08, 1, 1.11802398e-08,
+    -0.990901947, 7.08670557e-08, -0.134585842
+)
 
 -- Hàm áp dụng máu yếu (1 HP)
 local function applyLowHealth(char)
@@ -216,25 +224,24 @@ FreezeBtn.MouseButton1Click:Connect(function()
     isFrozen = not isFrozen
     
     if isFrozen then
-        FreezeBtn.Text = "❄️ Freeze (0,0): ON"
+        FreezeBtn.Text = "❄️ Freeze (Spawn): ON"
         FreezeBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         
         -- Làm yếu máu nhân vật hiện tại
         applyLowHealth(LocalPlayer.Character)
         
-        -- Khóa vị trí tại tọa độ 0, 0, 0
+        -- Khóa vị trí tại tọa độ mới
         freezeConnection = RunService.RenderStepped:Connect(function()
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
                 local hrp = char.HumanoidRootPart
-                -- Giữ tọa độ X=0, Y=5 (để không bị lọt sàn), Z=0
-                hrp.CFrame = CFrame.new(0, 5, 0)
+                hrp.CFrame = targetCFrame
                 hrp.AssemblyLinearVelocity = Vector3.zero
                 hrp.AssemblyAngularVelocity = Vector3.zero
             end
         end)
     else
-        FreezeBtn.Text = "❄️ Freeze (0,0): OFF"
+        FreezeBtn.Text = "❄️ Freeze (Spawn): OFF"
         FreezeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
         
         -- Hủy khóa vị trí
@@ -243,7 +250,7 @@ FreezeBtn.MouseButton1Click:Connect(function()
             freezeConnection = nil
         end
         
-        -- Khôi phục lại máu bình thường nếu muốn
+        -- Khôi phục lại máu bình thường
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("Humanoid") then
             char.Humanoid.MaxHealth = 100
