@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 3.1 - INSTANT DAMAGE VOID & FIXED AUTO SKILL)
+-- TSB MULTI-TOOL SCRIPT (VERSION 3.2 - INSTANT DAMAGE VOID & FIXED AUTO SKILL)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -29,7 +29,7 @@ VersionLabel.Size = UDim2.new(0, 160, 0, 25)
 VersionLabel.Position = UDim2.new(0, 10, 0.25, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v3.1"
+VersionLabel.Text = "📌 TSB Tool v3.2"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
 VersionLabel.Active = false
@@ -51,7 +51,7 @@ AntiLagBtn.Draggable = false
 AntiLagBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 2: FREEZE SPAWN + AUTO DIE (VOID INSTANT)
+-- NÚT 2: FREEZE SPAWN + AUTO DIE (VOID INSTANT -200)
 local FreezeAutoDieBtn = Instance.new("TextButton")
 FreezeAutoDieBtn.Size = UDim2.new(0, 160, 0, 35)
 FreezeAutoDieBtn.Position = UDim2.new(0, 10, 0.25, 40)
@@ -94,7 +94,7 @@ AutoSkillBtn.Parent = ScreenGui
 Instance.new("UICorner", AutoSkillBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
--- 2. LOGIC ANTI-LAG
+-- 2. LOGIC ANTI-LAG (GIỮ NGUYÊN CODE CŨ)
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
@@ -240,7 +240,7 @@ local targetCFrame2 = CFrame.new(
     0.671368241, 6.45233154e-09, -0.741123915
 )
 
--- 3A. FREEZE AUTO DIE (NHẬN DAMAGE NHỎ NHẤT = TELEPORT VOID TỨC THÌ)
+-- 3A. FREEZE AUTO DIE (CHỈ SỬA -200 HOẶC KHI DÍNH CHIÊU GAROU)
 local isAutoDieFrozen = false
 local autoDieConnection = nil
 local lastHealth = 100
@@ -256,10 +256,18 @@ local function triggerInstantVoidDeath()
             local hrp = char.HumanoidRootPart
             hrp.AssemblyLinearVelocity = Vector3.zero
             hrp.AssemblyAngularVelocity = Vector3.zero
-            -- Nhảy xuống Void cực sâu Y = -3000
-            hrp.CFrame = CFrame.new(hrp.Position.X, -3000, hrp.Position.Z)
+            -- Nhảy xuống Void ở Y = -200 theo đúng yêu cầu
+            hrp.CFrame = CFrame.new(hrp.Position.X, -200, hrp.Position.Z)
         end)
     end
+end
+
+-- Kiểm tra xem nhân vật có bị dính chiêu Garou/Combo tóm hay không
+local function isHitByGarouOrCombo(char)
+    if not char then return false end
+    return char:FindFirstChild("Ragdoll") or char:FindFirstChild("Stun") or char:FindFirstChild("Knockback")
+        or char:FindFirstChild("Grabbed") or char:FindFirstChild("BeingGrabbed") 
+        or char:FindFirstChild("Combo") or char:FindFirstChild("Action")
 end
 
 FreezeAutoDieBtn.MouseButton1Click:Connect(function()
@@ -276,24 +284,25 @@ FreezeAutoDieBtn.MouseButton1Click:Connect(function()
         
         if autoDieConnection then autoDieConnection:Disconnect() end
         
-        autoDieConnection = RunService.Heartbeat:Connect(function()
+        -- Chuyển sang RenderStepped để khóa vị trí liên tục từng Frame, không bị văng đi khi trúng đòn
+        autoDieConnection = RunService.RenderStepped:Connect(function()
             local curChar = LocalPlayer.Character
             if curChar and curChar:FindFirstChild("HumanoidRootPart") and curChar:FindFirstChild("Humanoid") then
                 local hum = curChar.Humanoid
                 local hrp = curChar.HumanoidRootPart
                 
-                -- NẾU MẤT BẤT KỲ LƯỢNG MÁU NÀO DÙ LÀ 0.01 HP -> TELEPORT VOID NGAY
+                -- NẾU MẤT BẤT KỲ LƯỢNG MÁU NÀO DÙ LÀ 0.01 HP -> TELEPORT VOID -200 NGAY
                 if hum.Health < lastHealth then
                     triggerInstantVoidDeath()
                 end
                 lastHealth = hum.Health
                 
-                -- KIỂM TRA HẠU CẢNH: BỊ BỎNG/STUN/RAGDOLL TỰ ĐỘNG CHẾT
-                if curChar:FindFirstChild("Ragdoll") or curChar:FindFirstChild("Stun") or curChar:FindFirstChild("Knockback") then
+                -- KIỂM TRA DÍNH CHIÊU GAROU/STUN/RAGDOLL/COMBO -> TỰ ĐỘNG CHẾT NGAY
+                if isHitByGarouOrCombo(curChar) then
                     triggerInstantVoidDeath()
                 end
 
-                -- GIỮ VỊ TRÍ NẾU CHƯA BỊ ĐÁNH
+                -- GIỮ VỊ TRÍ NẾU CHƯA BỊ ĐÁNH & KHÓA CỨNG VẬN TỐC
                 if not isDying then
                     hrp.CFrame = targetCFrame1
                     hrp.AssemblyLinearVelocity = Vector3.zero
@@ -309,7 +318,7 @@ FreezeAutoDieBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3B. FREEZE PURE
+-- 3B. FREEZE PURE (GIỮ NGUYÊN CODE CŨ)
 local isPureFrozen = false
 local pureFreezeConnection = nil
 
@@ -336,12 +345,11 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 4. LOGIC AUTO SKILL 1 - 2 - 3 (SỬA LỖI TUNG CHIÊU)
+-- 4. LOGIC AUTO SKILL 1 - 2 - 3 (GIỮ NGUYÊN CODE CŨ)
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
 
--- Hàm nhấn phím giả lập trực tiếp chuẩn Roblox
 local function pressKey(keyCode)
     pcall(function()
         VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
@@ -350,17 +358,14 @@ local function pressKey(keyCode)
     end)
 end
 
--- Kiểm tra xem đối thủ có khiên bất tử ForceField không
 local function isEnemyInvulnerable(targetChar)
     if not targetChar then return true end
-    -- Chỉ cần còn ForceField (Khiên trắng khi mới ra) thì coi như bất tử
     if targetChar:FindFirstChildOfClass("ForceField") then 
         return true 
     end
     return false
 end
 
--- Tìm kẻ địch gần nhất trong bán kính 40 Studs
 local function getValidTargetNear()
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
@@ -375,10 +380,7 @@ local function getValidTargetNear()
             
             if targetHum.Health > 0 then
                 local dist = (targetHrp.Position - myPos).Magnitude
-                
-                -- Khoảng cách đòn đánh <= 40 Studs
                 if dist <= 40 then
-                    -- Đã mất khiên bất tử
                     if not isEnemyInvulnerable(targetChar) then
                         return targetChar
                     end
@@ -396,15 +398,12 @@ local function startAutoSkillLoop()
             
             local target = getValidTargetNear()
             if target then
-                -- Bấm phím 1
                 pressKey(Enum.KeyCode.One)
                 task.wait(0.2)
                 
-                -- Bấm phím 2
                 pressKey(Enum.KeyCode.Two)
                 task.wait(0.2)
                 
-                -- Bấm phím 3
                 pressKey(Enum.KeyCode.Three)
                 task.wait(0.3)
             end
@@ -430,7 +429,7 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- TỰ ĐỘNG BẬT LẠI KHI HỒI SINH
+-- TỰ ĐỘNG BẬT LẠI KHI HỒI SINH (GIỮ NGUYÊN CODE CŨ)
 ---------------------------------------------------------
 LocalPlayer.CharacterAdded:Connect(function(char)
     isDying = false
@@ -440,43 +439,41 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     
     if isAutoDieFrozen then
         task.wait(0.05)
-        if not autoDieConnection then
-            autoDieConnection = RunService.Heartbeat:Connect(function()
-                local curChar = LocalPlayer.Character
-                if curChar and curChar:FindFirstChild("HumanoidRootPart") and curChar:FindFirstChild("Humanoid") then
-                    local curHum = curChar.Humanoid
-                    local hrp = curChar.HumanoidRootPart
-                    
-                    if curHum.Health < lastHealth then
-                        triggerInstantVoidDeath()
-                    end
-                    lastHealth = curHum.Health
-                    
-                    if curChar:FindFirstChild("Ragdoll") or curChar:FindFirstChild("Stun") or curChar:FindFirstChild("Knockback") then
-                        triggerInstantVoidDeath()
-                    end
-
-                    if not isDying then
-                        hrp.CFrame = targetCFrame1
-                        hrp.AssemblyLinearVelocity = Vector3.zero
-                        hrp.AssemblyAngularVelocity = Vector3.zero
-                    end
+        if autoDieConnection then autoDieConnection:Disconnect() end
+        autoDieConnection = RunService.RenderStepped:Connect(function()
+            local curChar = LocalPlayer.Character
+            if curChar and curChar:FindFirstChild("HumanoidRootPart") and curChar:FindFirstChild("Humanoid") then
+                local curHum = curChar.Humanoid
+                local hrp = curChar.HumanoidRootPart
+                
+                if curHum.Health < lastHealth then
+                    triggerInstantVoidDeath()
                 end
-            end)
-        end
-    end
-    
-    if isPureFrozen then
-        if not pureFreezeConnection then
-            pureFreezeConnection = RunService.RenderStepped:Connect(function()
-                local curChar = LocalPlayer.Character
-                if curChar and curChar:FindFirstChild("HumanoidRootPart") then
-                    local hrp = curChar.HumanoidRootPart
-                    hrp.CFrame = targetCFrame2
+                lastHealth = curHum.Health
+                
+                if isHitByGarouOrCombo(curChar) then
+                    triggerInstantVoidDeath()
+                end
+
+                if not isDying then
+                    hrp.CFrame = targetCFrame1
                     hrp.AssemblyLinearVelocity = Vector3.zero
                     hrp.AssemblyAngularVelocity = Vector3.zero
                 end
-            end)
-        end
+            end
+        end)
+    end
+    
+    if isPureFrozen then
+        if pureFreezeConnection then pureFreezeConnection:Disconnect() end
+        pureFreezeConnection = RunService.RenderStepped:Connect(function()
+            local curChar = LocalPlayer.Character
+            if curChar and curChar:FindFirstChild("HumanoidRootPart") then
+                local hrp = curChar.HumanoidRootPart
+                hrp.CFrame = targetCFrame2
+                hrp.AssemblyLinearVelocity = Vector3.zero
+                hrp.AssemblyAngularVelocity = Vector3.zero
+            end
+        end)
     end
 end)
