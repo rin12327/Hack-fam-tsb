@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 2.8 - VOID DIE & FRONT TARGET)
+-- TSB MULTI-TOOL SCRIPT (VERSION 2.8 - INSTANT VOID DIE)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -51,7 +51,7 @@ AntiLagBtn.Draggable = true
 AntiLagBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 2: FREEZE SPAWN + AUTO DIE (VOID -500)
+-- NÚT 2: FREEZE SPAWN + AUTO DIE (VOID INSTANT)
 local FreezeAutoDieBtn = Instance.new("TextButton")
 FreezeAutoDieBtn.Size = UDim2.new(0, 160, 0, 35)
 FreezeAutoDieBtn.Position = UDim2.new(0, 10, 0.35, 40)
@@ -240,7 +240,7 @@ local targetCFrame2 = CFrame.new(
     0.671368241, 6.45233154e-09, -0.741123915
 )
 
--- 3A. FREEZE AUTO DIE (DỊCH CHUYỂN XUỐNG VOID -500)
+-- 3A. FREEZE AUTO DIE (INSTANT VOID Y = -2000)
 local isAutoDieFrozen = false
 local autoDieConnection = nil
 local hitDetector = nil
@@ -249,13 +249,22 @@ local isDying = false
 local function triggerKillCreditDeath()
     if isDying then return end
     isDying = true
-    if autoDieConnection then autoDieConnection:Disconnect() autoDieConnection = nil end
+    
+    if autoDieConnection then 
+        autoDieConnection:Disconnect() 
+        autoDieConnection = nil 
+    end
     
     local char = LocalPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         pcall(function()
-            -- Dịch chuyển thẳng xuống độ sâu Y = -500 để chết ngay lập tức trong Void
-            char.HumanoidRootPart.CFrame = CFrame.new(char.HumanoidRootPart.Position.X, -500, char.HumanoidRootPart.Position.Z)
+            local hrp = char.HumanoidRootPart
+            -- Triệt tiêu hoàn toàn vận tốc ngay lập tức
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
+            
+            -- Dịch chuyển tức thời xuống Void độ sâu Y = -2000
+            hrp.CFrame = CFrame.new(hrp.Position.X, -2000, hrp.Position.Z)
         end)
     end
 end
@@ -334,7 +343,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 4. LOGIC AUTO SKILL 1 - 2 - 3 (CHECK TRƯỚC MẶT & HẾT BẤT TỬ)
+-- 4. LOGIC AUTO SKILL 1 - 2 - 3 (KIỂM TRA TRƯỚC MẶT & MẤT BẤT TỬ)
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -345,19 +354,15 @@ local function pressKey(keyCode)
     VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
 end
 
--- Hàm kiểm tra xem Target có đang trong trạng thái BẤT TỬ / SPAWN PROTECTION / HIGHLIGHT
 local function isTargetInvulnerable(targetChar)
     if not targetChar then return true end
     
-    -- 1. Check ForceField chuẩn
     if targetChar:FindFirstChildOfClass("ForceField") then return true end
     
-    -- 2. Check Tag / Value bất tử trong character TSB
     if targetChar:FindFirstChild("SpawnProtection") or targetChar:FindFirstChild("Invulnerable") or targetChar:FindFirstChild("Protection") then 
         return true 
     end
     
-    -- 3. Check toàn bộ Highlight (Vòng sáng bất tử TSB)
     for _, v in ipairs(targetChar:GetChildren()) do
         if v:IsA("Highlight") then
             local nameLower = string.lower(v.Name)
@@ -370,14 +375,13 @@ local function isTargetInvulnerable(targetChar)
     return false
 end
 
--- Hàm tìm đối thủ ĐANG Ở TRƯỚC MẶT, gần <= 25 studs và ĐÃ HẾT BẤT TỬ
 local function getValidTargetNear()
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
     
     local myHrp = myChar.HumanoidRootPart
     local myPos = myHrp.Position
-    local myLookVector = myHrp.CFrame.LookVector -- Hướng mặt của mình
+    local myLookVector = myHrp.CFrame.LookVector
 
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Humanoid") then
@@ -389,12 +393,9 @@ local function getValidTargetNear()
                 local directionToTarget = (targetHrp.Position - myPos)
                 local dist = directionToTarget.Magnitude
                 
-                -- Khoảng cách <= 25 studs
                 if dist <= 25 then
-                    -- Kiểm tra xem đối thủ có đang Ở TRƯỚC MẶT không (Dot Product > 0.3)
                     local dot = myLookVector:Dot(directionToTarget.Unit)
                     if dot > 0.3 then 
-                        -- Kiểm tra đối thủ ĐÃ HẾT BẤT TỬ CHƯA?
                         if not isTargetInvulnerable(targetChar) then
                             return targetChar
                         end
@@ -406,7 +407,6 @@ local function getValidTargetNear()
     return nil
 end
 
--- Vòng lặp tự động tung chiêu 1 -> 2 -> 3
 local function startAutoSkillLoop()
     autoSkillThread = task.spawn(function()
         while autoSkillEnabled do
@@ -414,7 +414,6 @@ local function startAutoSkillLoop()
             
             local validTarget = getValidTargetNear()
             if validTarget then
-                -- Đã thấy đối thủ ở TRƯỚC MẶT & ĐÃ MẤT BẤT TỬ -> Tung Combo 1, 2, 3
                 pressKey(Enum.KeyCode.One)
                 task.wait(0.3)
                 
