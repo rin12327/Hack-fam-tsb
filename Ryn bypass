@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 2.8 - INSTANT VOID DIE)
+-- TSB MULTI-TOOL SCRIPT (VERSION 2.8 - FIXED GUI & INSTANT VOID)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -12,7 +12,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 ---------------------------------------------------------
--- 1. TẠO GUI (4 NÚT TÍNH NĂNG)
+-- 1. TẠO GUI (4 NÚT CỐ ĐỊNH, DỊCH LÊN TRÊN)
 ---------------------------------------------------------
 if PlayerGui:FindFirstChild("TSB_Custom_Tools_Gui") then
     PlayerGui.TSB_Custom_Tools_Gui:Destroy()
@@ -23,73 +23,73 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (VERSION 2.8)
+-- NHÃN HIỂN THỊ PHIÊN BẢN (CỐ ĐỊNH, NHÍCH LÊN)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 160, 0, 25)
-VersionLabel.Position = UDim2.new(0, 10, 0.35, -30)
+VersionLabel.Position = UDim2.new(0, 10, 0.25, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
 VersionLabel.Text = "📌 TSB Tool v2.8"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
-VersionLabel.Active = true
-VersionLabel.Draggable = true
+VersionLabel.Active = false
+VersionLabel.Draggable = false
 VersionLabel.Parent = ScreenGui
 Instance.new("UICorner", VersionLabel).CornerRadius = UDim.new(0, 8)
 
 -- NÚT 1: ANTI-LAG
 local AntiLagBtn = Instance.new("TextButton")
 AntiLagBtn.Size = UDim2.new(0, 160, 0, 35)
-AntiLagBtn.Position = UDim2.new(0, 10, 0.35, 0)
+AntiLagBtn.Position = UDim2.new(0, 10, 0.25, 0)
 AntiLagBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AntiLagBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 AntiLagBtn.Text = "💥 Anti-Lag: OFF"
 AntiLagBtn.Font = Enum.Font.GothamBold
 AntiLagBtn.TextSize = 12
 AntiLagBtn.Active = true
-AntiLagBtn.Draggable = true
+AntiLagBtn.Draggable = false
 AntiLagBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
 -- NÚT 2: FREEZE SPAWN + AUTO DIE (VOID INSTANT)
 local FreezeAutoDieBtn = Instance.new("TextButton")
 FreezeAutoDieBtn.Size = UDim2.new(0, 160, 0, 35)
-FreezeAutoDieBtn.Position = UDim2.new(0, 10, 0.35, 40)
+FreezeAutoDieBtn.Position = UDim2.new(0, 10, 0.25, 40)
 FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 FreezeAutoDieBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 FreezeAutoDieBtn.Text = "💀 Freeze + Auto Die: OFF"
 FreezeAutoDieBtn.Font = Enum.Font.GothamBold
 FreezeAutoDieBtn.TextSize = 11
 FreezeAutoDieBtn.Active = true
-FreezeAutoDieBtn.Draggable = true
+FreezeAutoDieBtn.Draggable = false
 FreezeAutoDieBtn.Parent = ScreenGui
 Instance.new("UICorner", FreezeAutoDieBtn).CornerRadius = UDim.new(0, 8)
 
 -- NÚT 3: FREEZE PURE
 local FreezeOnlyBtn = Instance.new("TextButton")
 FreezeOnlyBtn.Size = UDim2.new(0, 160, 0, 35)
-FreezeOnlyBtn.Position = UDim2.new(0, 10, 0.35, 80)
+FreezeOnlyBtn.Position = UDim2.new(0, 10, 0.25, 80)
 FreezeOnlyBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 FreezeOnlyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 FreezeOnlyBtn.Text = "🧊 Freeze Pure: OFF"
 FreezeOnlyBtn.Font = Enum.Font.GothamBold
 FreezeOnlyBtn.TextSize = 12
 FreezeOnlyBtn.Active = true
-FreezeOnlyBtn.Draggable = true
+FreezeOnlyBtn.Draggable = false
 FreezeOnlyBtn.Parent = ScreenGui
 Instance.new("UICorner", FreezeOnlyBtn).CornerRadius = UDim.new(0, 8)
 
 -- NÚT 4: AUTO SKILL 1-2-3
 local AutoSkillBtn = Instance.new("TextButton")
 AutoSkillBtn.Size = UDim2.new(0, 160, 0, 35)
-AutoSkillBtn.Position = UDim2.new(0, 10, 0.35, 120)
+AutoSkillBtn.Position = UDim2.new(0, 10, 0.25, 120)
 AutoSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AutoSkillBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 AutoSkillBtn.Text = "⚔️ Auto Skill 1-2-3: OFF"
 AutoSkillBtn.Font = Enum.Font.GothamBold
 AutoSkillBtn.TextSize = 11
 AutoSkillBtn.Active = true
-AutoSkillBtn.Draggable = true
+AutoSkillBtn.Draggable = false
 AutoSkillBtn.Parent = ScreenGui
 Instance.new("UICorner", AutoSkillBtn).CornerRadius = UDim.new(0, 8)
 
