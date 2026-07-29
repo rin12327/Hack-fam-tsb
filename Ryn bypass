@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 2.8 - FIXED GUI & INSTANT VOID)
+-- TSB MULTI-TOOL SCRIPT (VERSION 3.0 - STRICT INVULNERABLE CHECK)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -12,7 +12,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 ---------------------------------------------------------
--- 1. TẠO GUI (4 NÚT CỐ ĐỊNH, DỊCH LÊN TRÊN)
+-- 1. TẠO GUI (4 NÚT CỐ ĐỊNH)
 ---------------------------------------------------------
 if PlayerGui:FindFirstChild("TSB_Custom_Tools_Gui") then
     PlayerGui.TSB_Custom_Tools_Gui:Destroy()
@@ -23,13 +23,13 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (CỐ ĐỊNH, NHÍCH LÊN)
+-- NHÃN HIỂN THỊ PHIÊN BẢN
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 160, 0, 25)
 VersionLabel.Position = UDim2.new(0, 10, 0.25, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v2.8"
+VersionLabel.Text = "📌 TSB Tool v3.0"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
 VersionLabel.Active = false
@@ -259,11 +259,8 @@ local function triggerKillCreditDeath()
     if char and char:FindFirstChild("HumanoidRootPart") then
         pcall(function()
             local hrp = char.HumanoidRootPart
-            -- Triệt tiêu hoàn toàn vận tốc ngay lập tức
             hrp.AssemblyLinearVelocity = Vector3.zero
             hrp.AssemblyAngularVelocity = Vector3.zero
-            
-            -- Dịch chuyển tức thời xuống Void độ sâu Y = -2000
             hrp.CFrame = CFrame.new(hrp.Position.X, -2000, hrp.Position.Z)
         end)
     end
@@ -343,30 +340,69 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 4. LOGIC AUTO SKILL 1 - 2 - 3 (KIỂM TRA TRƯỚC MẶT & MẤT BẤT TỬ)
+-- 4. LOGIC AUTO SKILL 1 - 2 - 3 (KIỂM TRA BẤT TỬ NGHIÊM NGẶT)
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
 
-local function pressKey(keyCode)
-    VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
-    task.wait(0.05)
-    VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+local function executeSkillSlot(slotNumber, keyCode)
+    local char = LocalPlayer.Character
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    
+    pcall(function()
+        local tools = {}
+        if char then
+            for _, item in ipairs(char:GetChildren()) do
+                if item:IsA("Tool") then table.insert(tools, item) end
+            end
+        end
+        if backpack then
+            for _, item in ipairs(backpack:GetChildren()) do
+                if item:IsA("Tool") then table.insert(tools, item) end
+            end
+        end
+        
+        local targetTool = tools[slotNumber]
+        if targetTool then
+            if char and targetTool.Parent ~= char then
+                local hum = char:FindFirstChild("Humanoid")
+                if hum then hum:EquipTool(targetTool) end
+            end
+            task.wait(0.02)
+            targetTool:Activate()
+        end
+    end)
+
+    pcall(function()
+        VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+        task.wait(0.03)
+        VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+    end)
 end
 
+-- HÀM CHECK BẤT TỬ CHUẨN XÁC CỦA TSB
 local function isTargetInvulnerable(targetChar)
     if not targetChar then return true end
     
+    -- 1. Kiểm tra ForceField của Roblox
     if targetChar:FindFirstChildOfClass("ForceField") then return true end
     
-    if targetChar:FindFirstChild("SpawnProtection") or targetChar:FindFirstChild("Invulnerable") or targetChar:FindFirstChild("Protection") then 
-        return true 
+    -- 2. Kiểm tra các Folder/Value/Tag Spawn Protection của TSB
+    local invulnKeywords = {"spawnprotection", "invulnerable", "protection", "invincible", "safezone", "godmode"}
+    for _, child in ipairs(targetChar:GetChildren()) do
+        local childName = string.lower(child.Name)
+        for _, keyword in ipairs(invulnKeywords) do
+            if string.find(childName, keyword) then
+                return true
+            end
+        end
     end
     
+    -- 3. Kiểm tra Highlight (hiệu ứng lóe sáng khi vừa spawn/bất tử)
     for _, v in ipairs(targetChar:GetChildren()) do
-        if v:IsA("Highlight") then
-            local nameLower = string.lower(v.Name)
-            if string.find(nameLower, "shield") or string.find(nameLower, "spawn") or string.find(nameLower, "protect") or v.Enabled then
+        if v:IsA("Highlight") and v.Enabled then
+            local hName = string.lower(v.Name)
+            if string.find(hName, "shield") or string.find(hName, "spawn") or string.find(hName, "protect") then
                 return true
             end
         end
@@ -393,9 +429,10 @@ local function getValidTargetNear()
                 local directionToTarget = (targetHrp.Position - myPos)
                 local dist = directionToTarget.Magnitude
                 
-                if dist <= 25 then
+                if dist <= 35 then
                     local dot = myLookVector:Dot(directionToTarget.Unit)
-                    if dot > 0.3 then 
+                    if dot > 0.1 then 
+                        -- CHỈ TRẢ VỀ MỤC TIÊU KHI ĐÃ MẤT BẤT TỬ 100%
                         if not isTargetInvulnerable(targetChar) then
                             return targetChar
                         end
@@ -410,18 +447,21 @@ end
 local function startAutoSkillLoop()
     autoSkillThread = task.spawn(function()
         while autoSkillEnabled do
-            task.wait(0.1)
+            task.wait(0.05) -- Quét liên tục mỗi 0.05s
             
             local validTarget = getValidTargetNear()
             if validTarget then
-                pressKey(Enum.KeyCode.One)
-                task.wait(0.3)
+                -- Tung Skill 1
+                executeSkillSlot(1, Enum.KeyCode.One)
+                task.wait(0.25)
                 
-                pressKey(Enum.KeyCode.Two)
-                task.wait(0.3)
+                -- Tung Skill 2
+                executeSkillSlot(2, Enum.KeyCode.Two)
+                task.wait(0.25)
                 
-                pressKey(Enum.KeyCode.Three)
-                task.wait(0.5)
+                -- Tung Skill 3
+                executeSkillSlot(3, Enum.KeyCode.Three)
+                task.wait(0.4)
             end
         end
     end)
