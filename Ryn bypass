@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 3.2 - INSTANT DAMAGE VOID FIX)
+-- TSB MULTI-TOOL SCRIPT (VERSION 3.5 - INSTANT DAMAGE VOID & FIXED AUTO SKILL)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -23,13 +23,13 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN
+-- NHÃN HIỂN THỊ PHIÊN BẢN (CẬP NHẬT V3.5)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 160, 0, 25)
 VersionLabel.Position = UDim2.new(0, 10, 0.25, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v3.2"
+VersionLabel.Text = "📌 TSB Tool v3.5"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
 VersionLabel.Active = false
@@ -51,7 +51,7 @@ AntiLagBtn.Draggable = false
 AntiLagBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 2: FREEZE SPAWN + AUTO DIE (VOID INSTANT -200)
+-- NÚT 2: FREEZE SPAWN + AUTO DIE (VOID INSTANT -400)
 local FreezeAutoDieBtn = Instance.new("TextButton")
 FreezeAutoDieBtn.Size = UDim2.new(0, 160, 0, 35)
 FreezeAutoDieBtn.Position = UDim2.new(0, 10, 0.25, 40)
@@ -197,7 +197,7 @@ local function disableAntiLag()
     for _, conn in ipairs(connections) do conn:Disconnect() end
     connections = {}
     for obj, data in pairs(hiddenObjects) do
-        if obj and obj.Parent me
+        if obj and obj.Parent then
             pcall(function()
                 obj.Transparency = data.Transparency
                 obj.Material = data.Material
@@ -240,7 +240,7 @@ local targetCFrame2 = CFrame.new(
     0.671368241, 6.45233154e-09, -0.741123915
 )
 
--- 3A. FREEZE AUTO DIE (MẤT DAMAGE DÙ LÀ NHỎ NHẤT -> VOID -200 NGAY LẬP TỨC)
+-- 3A. FREEZE AUTO DIE (MẤT DAMAGE DÙ LÀ NHỎ NHẤT -> VOID -400 NGAY LẬP TỨC)
 local isAutoDieFrozen = false
 local autoDieConnection = nil
 local healthConn = nil
@@ -257,8 +257,8 @@ local function triggerInstantVoidDeath()
             local hrp = char.HumanoidRootPart
             hrp.AssemblyLinearVelocity = Vector3.zero
             hrp.AssemblyAngularVelocity = Vector3.zero
-            -- Biến thẳng xuống Void ở Y = -200
-            hrp.CFrame = CFrame.new(hrp.Position.X, -200, hrp.Position.Z)
+            -- Biến thẳng xuống Void ở Y = -400 theo yêu cầu
+            hrp.CFrame = CFrame.new(hrp.Position.X, -400, hrp.Position.Z)
         end)
     end
 end
