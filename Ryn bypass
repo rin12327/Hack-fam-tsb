@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 3.2 - INSTANT DAMAGE VOID & FIXED AUTO SKILL)
+-- TSB MULTI-TOOL SCRIPT (VERSION 3.2 - INSTANT DAMAGE VOID FIX)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -94,7 +94,7 @@ AutoSkillBtn.Parent = ScreenGui
 Instance.new("UICorner", AutoSkillBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
--- 2. LOGIC ANTI-LAG (GIỮ NGUYÊN CODE CŨ)
+-- 2. LOGIC ANTI-LAG (GIỮ NGUYÊN)
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
@@ -197,7 +197,7 @@ local function disableAntiLag()
     for _, conn in ipairs(connections) do conn:Disconnect() end
     connections = {}
     for obj, data in pairs(hiddenObjects) do
-        if obj and obj.Parent then
+        if obj and obj.Parent me
             pcall(function()
                 obj.Transparency = data.Transparency
                 obj.Material = data.Material
@@ -240,9 +240,10 @@ local targetCFrame2 = CFrame.new(
     0.671368241, 6.45233154e-09, -0.741123915
 )
 
--- 3A. FREEZE AUTO DIE (CHỈ SỬA -200 HOẶC KHI DÍNH CHIÊU GAROU)
+-- 3A. FREEZE AUTO DIE (MẤT DAMAGE DÙ LÀ NHỎ NHẤT -> VOID -200 NGAY LẬP TỨC)
 local isAutoDieFrozen = false
 local autoDieConnection = nil
+local healthConn = nil
 local lastHealth = 100
 local isDying = false
 
@@ -256,18 +257,27 @@ local function triggerInstantVoidDeath()
             local hrp = char.HumanoidRootPart
             hrp.AssemblyLinearVelocity = Vector3.zero
             hrp.AssemblyAngularVelocity = Vector3.zero
-            -- Nhảy xuống Void ở Y = -200 theo đúng yêu cầu
+            -- Biến thẳng xuống Void ở Y = -200
             hrp.CFrame = CFrame.new(hrp.Position.X, -200, hrp.Position.Z)
         end)
     end
 end
 
--- Kiểm tra xem nhân vật có bị dính chiêu Garou/Combo tóm hay không
-local function isHitByGarouOrCombo(char)
-    if not char then return false end
-    return char:FindFirstChild("Ragdoll") or char:FindFirstChild("Stun") or char:FindFirstChild("Knockback")
-        or char:FindFirstChild("Grabbed") or char:FindFirstChild("BeingGrabbed") 
-        or char:FindFirstChild("Combo") or char:FindFirstChild("Action")
+local function setupHealthTracker(char)
+    if healthConn then healthConn:Disconnect() healthConn = nil end
+    if not char then return end
+    
+    local hum = char:WaitForChild("Humanoid", 3)
+    if hum then
+        lastHealth = hum.Health
+        -- BẮT BIẾN ĐỔI HP TRỰC TIẾP TỪ RENDER ENGINE (KHÔNG ĐỂ BỊ DELAY FRAME)
+        healthConn = hum.HealthChanged:Connect(function(newHealth)
+            if isAutoDieFrozen and newHealth < lastHealth then
+                triggerInstantVoidDeath()
+            end
+            lastHealth = newHealth
+        end)
+    end
 end
 
 FreezeAutoDieBtn.MouseButton1Click:Connect(function()
@@ -277,32 +287,29 @@ FreezeAutoDieBtn.MouseButton1Click:Connect(function()
         FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         isDying = false
         
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("Humanoid") then
-            lastHealth = char.Humanoid.Health
-        end
+        setupHealthTracker(LocalPlayer.Character)
         
         if autoDieConnection then autoDieConnection:Disconnect() end
         
-        -- Chuyển sang RenderStepped để khóa vị trí liên tục từng Frame, không bị văng đi khi trúng đòn
         autoDieConnection = RunService.RenderStepped:Connect(function()
             local curChar = LocalPlayer.Character
             if curChar and curChar:FindFirstChild("HumanoidRootPart") and curChar:FindFirstChild("Humanoid") then
                 local hum = curChar.Humanoid
                 local hrp = curChar.HumanoidRootPart
                 
-                -- NẾU MẤT BẤT KỲ LƯỢNG MÁU NÀO DÙ LÀ 0.01 HP -> TELEPORT VOID -200 NGAY
+                -- KIỂM TRA HP MẤT THÊM 1 LẦN TRONG FRAME ĐỂ CHẮC CHẮN 100%
                 if hum.Health < lastHealth then
                     triggerInstantVoidDeath()
                 end
-                lastHealth = hum.Health
                 
-                -- KIỂM TRA DÍNH CHIÊU GAROU/STUN/RAGDOLL/COMBO -> TỰ ĐỘNG CHẾT NGAY
-                if isHitByGarouOrCombo(curChar) then
+                -- KIỂM TRA DÍNH CÁC TRẠNG THÁI BỊ ĐÁNH / STUN / RAGDOLL / KNOCKBACK / GRAB
+                if curChar:FindFirstChild("Ragdoll") or curChar:FindFirstChild("Stun") 
+                    or curChar:FindFirstChild("Knockback") or curChar:FindFirstChild("Grabbed") 
+                    or curChar:FindFirstChild("BeingGrabbed") then
                     triggerInstantVoidDeath()
                 end
 
-                -- GIỮ VỊ TRÍ NẾU CHƯA BỊ ĐÁNH & KHÓA CỨNG VẬN TỐC
+                -- GIỮ VỊ TRÍ TẠI TỌA ĐỘ 1 NẾU CHƯA DÍNH DAMAGE
                 if not isDying then
                     hrp.CFrame = targetCFrame1
                     hrp.AssemblyLinearVelocity = Vector3.zero
@@ -314,11 +321,12 @@ FreezeAutoDieBtn.MouseButton1Click:Connect(function()
         FreezeAutoDieBtn.Text = "💀 Freeze + Auto Die: OFF"
         FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
         isDying = false
+        if healthConn then healthConn:Disconnect() healthConn = nil end
         if autoDieConnection then autoDieConnection:Disconnect() autoDieConnection = nil end
     end
 end)
 
--- 3B. FREEZE PURE (GIỮ NGUYÊN CODE CŨ)
+-- 3B. FREEZE PURE (GIỮ NGUYÊN)
 local isPureFrozen = false
 local pureFreezeConnection = nil
 
@@ -345,7 +353,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 4. LOGIC AUTO SKILL 1 - 2 - 3 (GIỮ NGUYÊN CODE CŨ)
+-- 4. LOGIC AUTO SKILL 1 - 2 - 3 (GIỮ NGUYÊN)
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -429,13 +437,12 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- TỰ ĐỘNG BẬT LẠI KHI HỒI SINH (GIỮ NGUYÊN CODE CŨ)
+-- TỰ ĐỘNG BẬT LẠI KHI HỒI SINH (GIỮ NGUYÊN)
 ---------------------------------------------------------
 LocalPlayer.CharacterAdded:Connect(function(char)
     isDying = false
     
-    local hum = char:WaitForChild("Humanoid", 3)
-    if hum then lastHealth = hum.Health end
+    setupHealthTracker(char)
     
     if isAutoDieFrozen then
         task.wait(0.05)
@@ -449,9 +456,10 @@ LocalPlayer.CharacterAdded:Connect(function(char)
                 if curHum.Health < lastHealth then
                     triggerInstantVoidDeath()
                 end
-                lastHealth = curHum.Health
                 
-                if isHitByGarouOrCombo(curChar) then
+                if curChar:FindFirstChild("Ragdoll") or curChar:FindFirstChild("Stun") 
+                    or curChar:FindFirstChild("Knockback") or curChar:FindFirstChild("Grabbed") 
+                    or curChar:FindFirstChild("BeingGrabbed") then
                     triggerInstantVoidDeath()
                 end
 
