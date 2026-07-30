@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 3.6 - GUARANTEED INSTANT DIE)
+-- TSB MULTI-TOOL SCRIPT (VERSION 3.7 - ANTI-AFK ADDED)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -7,12 +7,13 @@ local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local VirtualUser = game:GetService("VirtualUser")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 ---------------------------------------------------------
--- 1. TẠO GUI (4 NÚT CỐ ĐỊNH)
+-- 1. TẠO GUI (5 NÚT CỐ ĐỊNH)
 ---------------------------------------------------------
 if PlayerGui:FindFirstChild("TSB_Custom_Tools_Gui") then
     PlayerGui.TSB_Custom_Tools_Gui:Destroy()
@@ -23,13 +24,13 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (CẬP NHẬT V3.6)
+-- NHÃN HIỂN THỊ PHIÊN BẢN (CẬP NHẬT V3.7)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 160, 0, 25)
 VersionLabel.Position = UDim2.new(0, 10, 0.25, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v3.6"
+VersionLabel.Text = "📌 TSB Tool v3.7"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
 VersionLabel.Active = false
@@ -92,6 +93,20 @@ AutoSkillBtn.Active = true
 AutoSkillBtn.Draggable = false
 AutoSkillBtn.Parent = ScreenGui
 Instance.new("UICorner", AutoSkillBtn).CornerRadius = UDim.new(0, 8)
+
+-- NÚT 5: ANTI-AFK (THÊM MỚI V3.7)
+local AntiAfkBtn = Instance.new("TextButton")
+AntiAfkBtn.Size = UDim2.new(0, 160, 0, 35)
+AntiAfkBtn.Position = UDim2.new(0, 10, 0.25, 160)
+AntiAfkBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+AntiAfkBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AntiAfkBtn.Text = "⏰ Anti-AFK: OFF"
+AntiAfkBtn.Font = Enum.Font.GothamBold
+AntiAfkBtn.TextSize = 12
+AntiAfkBtn.Active = true
+AntiAfkBtn.Draggable = false
+AntiAfkBtn.Parent = ScreenGui
+Instance.new("UICorner", AntiAfkBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
 -- 2. LOGIC ANTI-LAG (GIỮ NGUYÊN)
@@ -448,6 +463,62 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
         if autoSkillThread then
             task.cancel(autoSkillThread)
             autoSkillThread = nil
+        end
+    end
+end)
+
+---------------------------------------------------------
+-- 5. LOGIC ANTI-AFK & CHỐNG SLEEP PC (THÊM MỚI V3.7)
+---------------------------------------------------------
+local antiAfkEnabled = false
+local antiAfkThread = nil
+local idledConn = nil
+
+local function startAntiAfk()
+    -- 1. Bắt sự kiện Idled của Roblox (Chống Kick 20p)
+    if not idledConn then
+        idledConn = LocalPlayer.Idled:Connect(function()
+            if antiAfkEnabled then
+                VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+                task.wait(1)
+                VirtualUser:Button2Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+            end
+        end)
+    end
+
+    -- 2. Vòng lặp phát tín hiệu bàn phím ảo (Chống PC Sleep & Ngăn Kick)
+    antiAfkThread = task.spawn(function()
+        while antiAfkEnabled do
+            task.wait(60) -- Mỗi 60 giây gửi tín hiệu 1 lần
+            if antiAfkEnabled then
+                pcall(function()
+                    -- Gửi tín hiệu phím F15 (phím vô hình không ảnh hưởng đến game)
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F15, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F15, false, game)
+                end)
+            end
+        end
+    end)
+end
+
+AntiAfkBtn.MouseButton1Click:Connect(function()
+    antiAfkEnabled = not antiAfkEnabled
+
+    if antiAfkEnabled then
+        AntiAfkBtn.Text = "⏰ Anti-AFK: ON"
+        AntiAfkBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        startAntiAfk()
+    else
+        AntiAfkBtn.Text = "⏰ Anti-AFK: OFF"
+        AntiAfkBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        if idledConn then
+            idledConn:Disconnect()
+            idledConn = nil
+        end
+        if antiAfkThread then
+            task.cancel(antiAfkThread)
+            antiAfkThread = nil
         end
     end
 end)
