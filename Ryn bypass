@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 3.7 - ANTI-AFK ADDED)
+-- TSB MULTI-TOOL SCRIPT (VERSION 3.8 - OPTIMIZED ANTI-LAG & SKILL 1-2)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -24,13 +24,13 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (CẬP NHẬT V3.7)
+-- NHÃN HIỂN THỊ PHIÊN BẢN (CẬP NHẬT V3.8)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 160, 0, 25)
 VersionLabel.Position = UDim2.new(0, 10, 0.25, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v3.7"
+VersionLabel.Text = "📌 TSB Tool v3.8"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
 VersionLabel.Active = false
@@ -80,13 +80,13 @@ FreezeOnlyBtn.Draggable = false
 FreezeOnlyBtn.Parent = ScreenGui
 Instance.new("UICorner", FreezeOnlyBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 4: AUTO SKILL 1-2-3
+-- NÚT 4: AUTO SKILL 1-2 (ĐÃ BỎ CHIÊU 3)
 local AutoSkillBtn = Instance.new("TextButton")
 AutoSkillBtn.Size = UDim2.new(0, 160, 0, 35)
 AutoSkillBtn.Position = UDim2.new(0, 10, 0.25, 120)
 AutoSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AutoSkillBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoSkillBtn.Text = "⚔️ Auto Skill 1-2-3: OFF"
+AutoSkillBtn.Text = "⚔️ Auto Skill 1-2: OFF"
 AutoSkillBtn.Font = Enum.Font.GothamBold
 AutoSkillBtn.TextSize = 11
 AutoSkillBtn.Active = true
@@ -94,7 +94,7 @@ AutoSkillBtn.Draggable = false
 AutoSkillBtn.Parent = ScreenGui
 Instance.new("UICorner", AutoSkillBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 5: ANTI-AFK (THÊM MỚI V3.7)
+-- NÚT 5: ANTI-AFK
 local AntiAfkBtn = Instance.new("TextButton")
 AntiAfkBtn.Size = UDim2.new(0, 160, 0, 35)
 AntiAfkBtn.Position = UDim2.new(0, 10, 0.25, 160)
@@ -109,7 +109,7 @@ AntiAfkBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiAfkBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
--- 2. LOGIC ANTI-LAG (GIỮ NGUYÊN)
+-- 2. LOGIC ANTI-LAG NÂNG CẤP (XÓA CHIÊU, AURA, VẬT THỂ TÁI SINH, PHỤ KIỆN)
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
@@ -128,10 +128,18 @@ local function removeAllClouds()
     end)
 end
 
-local function isCharacter(obj)
+local function isLocalCharacter(obj)
+    if not obj then return false end
+    if LocalPlayer.Character and (obj == LocalPlayer.Character or obj:IsDescendantOf(LocalPlayer.Character)) then
+        return true
+    end
+    return false
+end
+
+local function isOtherPlayerCharacter(obj)
     if not obj then return false end
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr.Character and (obj == plr.Character or obj:IsDescendantOf(plr.Character)) then
+        if plr ~= LocalPlayer and plr.Character and (obj == plr.Character or obj:IsDescendantOf(plr.Character)) then
             return true
         end
     end
@@ -152,21 +160,48 @@ local function createAntiVoidFloor()
     end
 end
 
+-- Tối ưu hóa & xóa phụ kiện trên người chơi khác
+local function cleanPlayerCharacter(char)
+    if not char or isLocalCharacter(char) then return end
+    pcall(function()
+        for _, child in ipairs(char:GetChildren()) do
+            if child:IsA("Accessory") or child:IsA("Shirt") or child:IsA("Pants") or child:IsA("ShirtGraphic") or child:IsA("CharacterMesh") then
+                child:Destroy()
+            end
+        end
+    end)
+end
+
 local function processObject(obj)
     if not obj or not antiLagEnabled then return end
     pcall(function()
         if obj.Name == "AntiVoidSafetyFloor" or obj:IsA("Camera") or obj:IsA("Terrain") then return end
+        
+        -- Giữ nguyên bản thân, xóa trang phục/phụ kiện của người chơi khác
+        if isLocalCharacter(obj) then return end
+        if isOtherPlayerCharacter(obj) then
+            if obj:IsA("Accessory") or obj:IsA("Shirt") or obj:IsA("Pants") or obj:IsA("ShirtGraphic") or obj:IsA("CharacterMesh") then
+                obj:Destroy()
+            end
+            return
+        end
+
+        -- Xóa mây, bầu trời
         if obj:IsA("Clouds") or (obj:IsA("BasePart") and string.find(string.lower(obj.Name), "cloud")) then
             obj:Destroy()
             return
         end
-        if isCharacter(obj) then return end
+
+        -- Xóa triệt để hiệu ứng đánh, Aura, hạt, vệt chiêu
         if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") 
             or obj:IsA("Fire") or obj:IsA("Sparkles") or obj:IsA("Highlight") 
-            or obj:IsA("Beam") or obj:IsA("Decal") or obj:IsA("Texture") then
+            or obj:IsA("Beam") or obj:IsA("Decal") or obj:IsA("Texture")
+            or obj:IsA("Explosion") then
             obj:Destroy()
             return
         end
+
+        -- Ẩn tất cả các khối trong game (bao gồm khối vừa respawn lại như cây, thùng rác, ghế)
         if obj:IsA("BasePart") or obj:IsA("MeshPart") then
             if not hiddenObjects[obj] then
                 hiddenObjects[obj] = {
@@ -190,6 +225,7 @@ local function enableAntiLag()
     antiLagEnabled = true
     createAntiVoidFloor()
     removeAllClouds()
+    
     pcall(function()
         Lighting.GlobalShadows = false
         Lighting.FogEnd = 9e9
@@ -200,11 +236,38 @@ local function enableAntiLag()
         end
         if Workspace.Terrain then Workspace.Terrain:Clear() end
     end)
+
+    -- Làm sạch toàn bộ người chơi hiện tại
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            cleanPlayerCharacter(plr.Character)
+        end
+    end
+
+    -- Xử lý toàn bộ Workspace
     for _, v in ipairs(Workspace:GetDescendants()) do processObject(v) end
+    
+    -- Bắt sự kiện khi có khối mới/vật thể tái sinh/chiêu thức tung ra -> Làm biến mất ngay
     local conn = Workspace.DescendantAdded:Connect(function(child)
-        if antiLagEnabled then task.wait(0.02) processObject(child) end
+        if antiLagEnabled then 
+            task.wait(0.01) 
+            processObject(child) 
+        end
     end)
     table.insert(connections, conn)
+
+    -- Tự động xóa phụ kiện khi người chơi khác hồi sinh
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            local pConn = plr.CharacterAdded:Connect(function(char)
+                if antiLagEnabled then
+                    task.wait(0.1)
+                    cleanPlayerCharacter(char)
+                end
+            end)
+            table.insert(connections, pConn)
+        end
+    end
 end
 
 local function disableAntiLag()
@@ -239,7 +302,7 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. TỌA ĐỘ & FREEZE LOGIC
+-- 3. TỌA ĐỘ & FREEZE LOGIC (GIỮ NGUYÊN)
 ---------------------------------------------------------
 local targetCFrame1 = CFrame.new(
     439.180542, 439.511902, -375.309557,
@@ -255,7 +318,7 @@ local targetCFrame2 = CFrame.new(
     0.671368241, 6.45233154e-09, -0.741123915
 )
 
--- 3A. FREEZE AUTO DIE (DỊCH CHUYỂN VOID SÂU -2000 + ÉP CHẾT TỨC THÌ)
+-- 3A. FREEZE AUTO DIE
 local isAutoDieFrozen = false
 local autoDieConnection = nil
 local healthConn = nil
@@ -272,7 +335,6 @@ local function triggerInstantVoidDeath()
             local hum = char:FindFirstChildOfClass("Humanoid")
             local hrp = char:FindFirstChild("HumanoidRootPart")
             
-            -- Xóa các kết nối/Weld đang giữ nhân vật
             for _, child in ipairs(char:GetDescendants()) do
                 if child:IsA("Weld") or child:IsA("WeldConstraint") or child:IsA("BodyVelocity") or child:IsA("BodyPosition") then
                     child:Destroy()
@@ -282,11 +344,9 @@ local function triggerInstantVoidDeath()
             if hrp then
                 hrp.AssemblyLinearVelocity = Vector3.zero
                 hrp.AssemblyAngularVelocity = Vector3.zero
-                -- Dịch chuyển siêu sâu xuống Void (-2000)
                 hrp.CFrame = CFrame.new(hrp.Position.X, -2000, hrp.Position.Z)
             end
             
-            -- Ép vỡ khớp nhân vật / Đặt HP về 0 ngay lập tức
             if hum then
                 hum.Health = 0
             end
@@ -328,19 +388,16 @@ FreezeAutoDieBtn.MouseButton1Click:Connect(function()
                 local hum = curChar.Humanoid
                 local hrp = curChar.HumanoidRootPart
                 
-                -- KIỂM TRA HP MẤT
                 if hum.Health < lastHealth then
                     triggerInstantVoidDeath()
                 end
                 
-                -- KIỂM TRA TRẠNG THÁI BỊ ĐÁNH
                 if curChar:FindFirstChild("Ragdoll") or curChar:FindFirstChild("Stun") 
                     or curChar:FindFirstChild("Knockback") or curChar:FindFirstChild("Grabbed") 
                     or curChar:FindFirstChild("BeingGrabbed") then
                     triggerInstantVoidDeath()
                 end
 
-                -- GIỮ VỊ TRÍ TẠI TỌA ĐỘ 1 NẾU CHƯA DÍNH DAMAGE
                 if not isDying then
                     hrp.CFrame = targetCFrame1
                     hrp.AssemblyLinearVelocity = Vector3.zero
@@ -357,7 +414,7 @@ FreezeAutoDieBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 3B. FREEZE PURE (GIỮ NGUYÊN)
+-- 3B. FREEZE PURE
 local isPureFrozen = false
 local pureFreezeConnection = nil
 
@@ -384,7 +441,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 4. LOGIC AUTO SKILL 1 - 2 - 3 (GIỮ NGUYÊN)
+-- 4. LOGIC AUTO SKILL 1 - 2 (ĐÃ BỎ CHIÊU 3 & TỐI ƯU HỒI CHIÊU)
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -437,14 +494,13 @@ local function startAutoSkillLoop()
             
             local target = getValidTargetNear()
             if target then
+                -- Bấm chiêu 1
                 pressKey(Enum.KeyCode.One)
-                task.wait(0.2)
+                task.wait(0.15)
                 
+                -- Bấm chiêu 2
                 pressKey(Enum.KeyCode.Two)
-                task.wait(0.2)
-                
-                pressKey(Enum.KeyCode.Three)
-                task.wait(0.3)
+                task.wait(0.15)
             end
         end
     end)
@@ -454,11 +510,11 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     autoSkillEnabled = not autoSkillEnabled
     
     if autoSkillEnabled then
-        AutoSkillBtn.Text = "⚔️ Auto Skill 1-2-3: ON"
+        AutoSkillBtn.Text = "⚔️ Auto Skill 1-2: ON"
         AutoSkillBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         startAutoSkillLoop()
     else
-        AutoSkillBtn.Text = "⚔️ Auto Skill 1-2-3: OFF"
+        AutoSkillBtn.Text = "⚔️ Auto Skill 1-2: OFF"
         AutoSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
         if autoSkillThread then
             task.cancel(autoSkillThread)
@@ -468,14 +524,13 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC ANTI-AFK & CHỐNG SLEEP PC (THÊM MỚI V3.7)
+-- 5. LOGIC ANTI-AFK & CHỐNG SLEEP PC (GIỮ NGUYÊN V3.7)
 ---------------------------------------------------------
 local antiAfkEnabled = false
 local antiAfkThread = nil
 local idledConn = nil
 
 local function startAntiAfk()
-    -- 1. Bắt sự kiện Idled của Roblox (Chống Kick 20p)
     if not idledConn then
         idledConn = LocalPlayer.Idled:Connect(function()
             if antiAfkEnabled then
@@ -486,13 +541,11 @@ local function startAntiAfk()
         end)
     end
 
-    -- 2. Vòng lặp phát tín hiệu bàn phím ảo (Chống PC Sleep & Ngăn Kick)
     antiAfkThread = task.spawn(function()
         while antiAfkEnabled do
-            task.wait(60) -- Mỗi 60 giây gửi tín hiệu 1 lần
+            task.wait(60)
             if antiAfkEnabled then
                 pcall(function()
-                    -- Gửi tín hiệu phím F15 (phím vô hình không ảnh hưởng đến game)
                     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F15, false, game)
                     task.wait(0.05)
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F15, false, game)
