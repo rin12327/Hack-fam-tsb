@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 3.9 - EXTREME ANTI-LAG)
+-- TSB MULTI-TOOL SCRIPT (VERSION 3.9.1 - FIXED CONTROLS)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -24,13 +24,13 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (CẬP NHẬT V3.9)
+-- NHÃN HIỂN THỊ PHIÊN BẢN (CẬP NHẬT V3.9.1)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 160, 0, 25)
 VersionLabel.Position = UDim2.new(0, 10, 0.25, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v3.9 MAX"
+VersionLabel.Text = "📌 TSB Tool v3.9.1"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
 VersionLabel.Active = false
@@ -109,13 +109,12 @@ AntiAfkBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiAfkBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
--- 2. LOGIC ANTI-LAG SIÊU CẤP (EXTREME MAX PERFORMANCE)
+-- 2. LOGIC ANTI-LAG (SỬA BẢO VỆ BẢN THÂN + XÓA PHỤ KIỆN TẤT CẢ)
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
 local hiddenObjects = {}
 
--- Danh sách keyword nhận diện vật thể môi trường / hiệu ứng lướt để tiêu diệt tận gốc
 local banKeywords = {
     "tree", "bench", "trash", "chair", "table", "bush", "grass", "cloud", 
     "rock", "prop", "destructible", "breakable", "building", "wall", "fence",
@@ -132,21 +131,14 @@ local function isBannedName(name)
     return false
 end
 
-local function removeAllCloudsAndSky()
-    pcall(function()
-        for _, v in ipairs(Lighting:GetChildren()) do
-            if v:IsA("Clouds") or v:IsA("Sky") or v:IsA("PostEffect") or v:IsA("Atmosphere") then 
-                v:Destroy() 
-            end
+local function isCharacterObject(obj)
+    if not obj then return false end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.Character and (obj == plr.Character or obj:IsDescendantOf(plr.Character)) then
+            return true
         end
-        for _, v in ipairs(Workspace:GetDescendants()) do
-            if v:IsA("Clouds") or isBannedName(v.Name) then
-                if not (v:IsDescendantOf(Players)) then
-                    v:Destroy()
-                end
-            end
-        end
-    end)
+    end
+    return false
 end
 
 local function isLocalCharacter(obj)
@@ -157,14 +149,21 @@ local function isLocalCharacter(obj)
     return false
 end
 
-local function isOtherPlayerCharacter(obj)
-    if not obj then return false end
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character and (obj == plr.Character or obj:IsDescendantOf(plr.Character)) then
-            return true
+local function removeAllCloudsAndSky()
+    pcall(function()
+        for _, v in ipairs(Lighting:GetChildren()) do
+            if v:IsA("Clouds") or v:IsA("Sky") or v:IsA("PostEffect") or v:IsA("Atmosphere") then 
+                v:Destroy() 
+            end
         end
-    end
-    return false
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("Clouds") or isBannedName(v.Name) then
+                if not isCharacterObject(v) then
+                    v:Destroy()
+                end
+            end
+        end
+    end)
 end
 
 local function createAntiVoidFloor()
@@ -181,8 +180,9 @@ local function createAntiVoidFloor()
     end
 end
 
-local function cleanPlayerCharacter(char)
-    if not char or isLocalCharacter(char) then return end
+-- Xóa phụ kiện của TẤT CẢ người chơi (Bao gồm cả bản thân)
+local function cleanAccessories(char)
+    if not char then return end
     pcall(function()
         for _, child in ipairs(char:GetChildren()) do
             if child:IsA("Accessory") or child:IsA("Shirt") or child:IsA("Pants") 
@@ -196,28 +196,25 @@ end
 local function processObject(obj)
     if not obj or not antiLagEnabled then return end
     pcall(function()
-        -- Giữ lại Camera, Terrain, Sàn Void
         if obj.Name == "AntiVoidSafetyFloor" or obj:IsA("Camera") or obj:IsA("Terrain") then return end
         
-        -- Nếu là bản thân -> Giữ nguyên
-        if isLocalCharacter(obj) then return end
-
-        -- Nếu là người chơi khác -> Xóa phụ kiện / trang phục
-        if isOtherPlayerCharacter(obj) then
+        -- Nếu là vật thể thuộc nhân vật người chơi
+        if isCharacterObject(obj) then
+            -- Xóa phụ kiện trang phục (Của cả bản thân lẫn người khác)
             if obj:IsA("Accessory") or obj:IsA("Shirt") or obj:IsA("Pants") 
                or obj:IsA("ShirtGraphic") or obj:IsA("CharacterMesh") then
                 obj:Destroy()
             end
+            -- BẢO VỆ THÂN THỂ: Không xóa hay làm ẩn BasePart của nhân vật để di chuyển / dùng chiêu bình thường
             return
         end
 
-        -- XÓA TRIỆT ĐỂ: Các mô hình map tái sinh (cây, ghế, thùng rác, công trình...) & Hiệu ứng lướt/đánh
+        -- XÓA VẬT THỂ MÔI TRƯỜNG & HIỆU ỨNG SKILL/DASH
         if isBannedName(obj.Name) or obj:IsA("Clouds") or obj:IsA("Explosion") then
             obj:Destroy()
             return
         end
 
-        -- Xóa mọi loại Particle, Trail, Beam, Light, Effects
         if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") 
             or obj:IsA("Fire") or obj:IsA("Sparkles") or obj:IsA("Highlight") 
             or obj:IsA("Beam") or obj:IsA("Decal") or obj:IsA("Texture") 
@@ -226,7 +223,7 @@ local function processObject(obj)
             return
         end
 
-        -- Tận diệt các Part trang trí còn lại của Map
+        -- Ẩn các khối Map còn lại
         if obj:IsA("BasePart") or obj:IsA("MeshPart") then
             if not hiddenObjects[obj] then
                 hiddenObjects[obj] = {
@@ -262,17 +259,17 @@ local function enableAntiLag()
         if Workspace.Terrain then Workspace.Terrain:Clear() end
     end)
 
-    -- Làm sạch phụ kiện người chơi khác
+    -- Làm sạch phụ kiện của tất cả người chơi trong phòng (bao gồm bản thân)
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
-            cleanPlayerCharacter(plr.Character)
+        if plr.Character then
+            cleanAccessories(plr.Character)
         end
     end
 
-    -- Xử lý toàn bộ Workspace
+    -- Quét toàn bộ Workspace
     for _, v in ipairs(Workspace:GetDescendants()) do processObject(v) end
     
-    -- Bắt sự kiện tạo lại cây/thùng rác/ghế/hiệu ứng lướt -> Xóa ngay lập tức
+    -- Xóa vật thể/hiệu ứng lướt mới xuất hiện
     local conn = Workspace.DescendantAdded:Connect(function(child)
         if antiLagEnabled then 
             task.spawn(function()
@@ -282,17 +279,15 @@ local function enableAntiLag()
     end)
     table.insert(connections, conn)
 
-    -- Tự động dọn dẹp phụ kiện khi người chơi khác spawn
+    -- Tự động dọn dẹp phụ kiện khi người chơi spawn lại
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            local pConn = plr.CharacterAdded:Connect(function(char)
-                if antiLagEnabled then
-                    task.wait(0.1)
-                    cleanPlayerCharacter(char)
-                end
-            end)
-            table.insert(connections, pConn)
-        end
+        local pConn = plr.CharacterAdded:Connect(function(char)
+            if antiLagEnabled then
+                task.wait(0.1)
+                cleanAccessories(char)
+            end
+        end)
+        table.insert(connections, pConn)
     end
 end
 
@@ -328,7 +323,7 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. TỌA ĐỘ & FREEZE LOGIC (GIỮ NGUYÊN)
+-- 3. TỌA ĐỘ & FREEZE LOGIC
 ---------------------------------------------------------
 local targetCFrame1 = CFrame.new(
     439.180542, 439.511902, -375.309557,
@@ -607,6 +602,11 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     isDying = false
     
     setupHealthTracker(char)
+    
+    if antiLagEnabled then
+        task.wait(0.1)
+        cleanAccessories(char)
+    end
     
     if isAutoDieFrozen then
         task.wait(0.05)
