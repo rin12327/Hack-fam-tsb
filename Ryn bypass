@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 3.8 - OPTIMIZED ANTI-LAG & SKILL 1-2)
+-- TSB MULTI-TOOL SCRIPT (VERSION 3.9 - EXTREME ANTI-LAG)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -24,13 +24,13 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (CẬP NHẬT V3.8)
+-- NHÃN HIỂN THỊ PHIÊN BẢN (CẬP NHẬT V3.9)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 160, 0, 25)
 VersionLabel.Position = UDim2.new(0, 10, 0.25, -30)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v3.8"
+VersionLabel.Text = "📌 TSB Tool v3.9 MAX"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 13
 VersionLabel.Active = false
@@ -80,7 +80,7 @@ FreezeOnlyBtn.Draggable = false
 FreezeOnlyBtn.Parent = ScreenGui
 Instance.new("UICorner", FreezeOnlyBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 4: AUTO SKILL 1-2 (ĐÃ BỎ CHIÊU 3)
+-- NÚT 4: AUTO SKILL 1-2
 local AutoSkillBtn = Instance.new("TextButton")
 AutoSkillBtn.Size = UDim2.new(0, 160, 0, 35)
 AutoSkillBtn.Position = UDim2.new(0, 10, 0.25, 120)
@@ -109,20 +109,41 @@ AntiAfkBtn.Parent = ScreenGui
 Instance.new("UICorner", AntiAfkBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
--- 2. LOGIC ANTI-LAG NÂNG CẤP (XÓA CHIÊU, AURA, VẬT THỂ TÁI SINH, PHỤ KIỆN)
+-- 2. LOGIC ANTI-LAG SIÊU CẤP (EXTREME MAX PERFORMANCE)
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
 local hiddenObjects = {}
 
-local function removeAllClouds()
+-- Danh sách keyword nhận diện vật thể môi trường / hiệu ứng lướt để tiêu diệt tận gốc
+local banKeywords = {
+    "tree", "bench", "trash", "chair", "table", "bush", "grass", "cloud", 
+    "rock", "prop", "destructible", "breakable", "building", "wall", "fence",
+    "dash", "vfx", "fx", "aura", "slash", "particle", "eff", "impact", "shockwave"
+}
+
+local function isBannedName(name)
+    local lowerName = string.lower(name)
+    for _, kw in ipairs(banKeywords) do
+        if string.find(lowerName, kw) then
+            return true
+        end
+    end
+    return false
+end
+
+local function removeAllCloudsAndSky()
     pcall(function()
         for _, v in ipairs(Lighting:GetChildren()) do
-            if v:IsA("Clouds") or v:IsA("Sky") then v:Destroy() end
+            if v:IsA("Clouds") or v:IsA("Sky") or v:IsA("PostEffect") or v:IsA("Atmosphere") then 
+                v:Destroy() 
+            end
         end
         for _, v in ipairs(Workspace:GetDescendants()) do
-            if v:IsA("Clouds") or (v:IsA("BasePart") and string.find(string.lower(v.Name), "cloud")) then
-                v:Destroy()
+            if v:IsA("Clouds") or isBannedName(v.Name) then
+                if not (v:IsDescendantOf(Players)) then
+                    v:Destroy()
+                end
             end
         end
     end)
@@ -160,12 +181,12 @@ local function createAntiVoidFloor()
     end
 end
 
--- Tối ưu hóa & xóa phụ kiện trên người chơi khác
 local function cleanPlayerCharacter(char)
     if not char or isLocalCharacter(char) then return end
     pcall(function()
         for _, child in ipairs(char:GetChildren()) do
-            if child:IsA("Accessory") or child:IsA("Shirt") or child:IsA("Pants") or child:IsA("ShirtGraphic") or child:IsA("CharacterMesh") then
+            if child:IsA("Accessory") or child:IsA("Shirt") or child:IsA("Pants") 
+               or child:IsA("ShirtGraphic") or child:IsA("CharacterMesh") then
                 child:Destroy()
             end
         end
@@ -175,33 +196,37 @@ end
 local function processObject(obj)
     if not obj or not antiLagEnabled then return end
     pcall(function()
+        -- Giữ lại Camera, Terrain, Sàn Void
         if obj.Name == "AntiVoidSafetyFloor" or obj:IsA("Camera") or obj:IsA("Terrain") then return end
         
-        -- Giữ nguyên bản thân, xóa trang phục/phụ kiện của người chơi khác
+        -- Nếu là bản thân -> Giữ nguyên
         if isLocalCharacter(obj) then return end
+
+        -- Nếu là người chơi khác -> Xóa phụ kiện / trang phục
         if isOtherPlayerCharacter(obj) then
-            if obj:IsA("Accessory") or obj:IsA("Shirt") or obj:IsA("Pants") or obj:IsA("ShirtGraphic") or obj:IsA("CharacterMesh") then
+            if obj:IsA("Accessory") or obj:IsA("Shirt") or obj:IsA("Pants") 
+               or obj:IsA("ShirtGraphic") or obj:IsA("CharacterMesh") then
                 obj:Destroy()
             end
             return
         end
 
-        -- Xóa mây, bầu trời
-        if obj:IsA("Clouds") or (obj:IsA("BasePart") and string.find(string.lower(obj.Name), "cloud")) then
+        -- XÓA TRIỆT ĐỂ: Các mô hình map tái sinh (cây, ghế, thùng rác, công trình...) & Hiệu ứng lướt/đánh
+        if isBannedName(obj.Name) or obj:IsA("Clouds") or obj:IsA("Explosion") then
             obj:Destroy()
             return
         end
 
-        -- Xóa triệt để hiệu ứng đánh, Aura, hạt, vệt chiêu
+        -- Xóa mọi loại Particle, Trail, Beam, Light, Effects
         if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") 
             or obj:IsA("Fire") or obj:IsA("Sparkles") or obj:IsA("Highlight") 
-            or obj:IsA("Beam") or obj:IsA("Decal") or obj:IsA("Texture")
-            or obj:IsA("Explosion") then
+            or obj:IsA("Beam") or obj:IsA("Decal") or obj:IsA("Texture") 
+            or obj:IsA("SpecialMesh") then
             obj:Destroy()
             return
         end
 
-        -- Ẩn tất cả các khối trong game (bao gồm khối vừa respawn lại như cây, thùng rác, ghế)
+        -- Tận diệt các Part trang trí còn lại của Map
         if obj:IsA("BasePart") or obj:IsA("MeshPart") then
             if not hiddenObjects[obj] then
                 hiddenObjects[obj] = {
@@ -224,7 +249,7 @@ end
 local function enableAntiLag()
     antiLagEnabled = true
     createAntiVoidFloor()
-    removeAllClouds()
+    removeAllCloudsAndSky()
     
     pcall(function()
         Lighting.GlobalShadows = false
@@ -232,12 +257,12 @@ local function enableAntiLag()
         Lighting.Brightness = 1
         Lighting.ClockTime = 12
         for _, v in ipairs(Lighting:GetChildren()) do
-            if v:IsA("Sky") or v:IsA("Clouds") or v:IsA("PostEffect") or v:IsA("Atmosphere") then v:Destroy() end
+            v:Destroy()
         end
         if Workspace.Terrain then Workspace.Terrain:Clear() end
     end)
 
-    -- Làm sạch toàn bộ người chơi hiện tại
+    -- Làm sạch phụ kiện người chơi khác
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
             cleanPlayerCharacter(plr.Character)
@@ -247,16 +272,17 @@ local function enableAntiLag()
     -- Xử lý toàn bộ Workspace
     for _, v in ipairs(Workspace:GetDescendants()) do processObject(v) end
     
-    -- Bắt sự kiện khi có khối mới/vật thể tái sinh/chiêu thức tung ra -> Làm biến mất ngay
+    -- Bắt sự kiện tạo lại cây/thùng rác/ghế/hiệu ứng lướt -> Xóa ngay lập tức
     local conn = Workspace.DescendantAdded:Connect(function(child)
         if antiLagEnabled then 
-            task.wait(0.01) 
-            processObject(child) 
+            task.spawn(function()
+                processObject(child) 
+            end)
         end
     end)
     table.insert(connections, conn)
 
-    -- Tự động xóa phụ kiện khi người chơi khác hồi sinh
+    -- Tự động dọn dẹp phụ kiện khi người chơi khác spawn
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             local pConn = plr.CharacterAdded:Connect(function(char)
@@ -441,7 +467,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 4. LOGIC AUTO SKILL 1 - 2 (ĐÃ BỎ CHIÊU 3 & TỐI ƯU HỒI CHIÊU)
+-- 4. LOGIC AUTO SKILL 1 - 2
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -494,11 +520,9 @@ local function startAutoSkillLoop()
             
             local target = getValidTargetNear()
             if target then
-                -- Bấm chiêu 1
                 pressKey(Enum.KeyCode.One)
                 task.wait(0.15)
                 
-                -- Bấm chiêu 2
                 pressKey(Enum.KeyCode.Two)
                 task.wait(0.15)
             end
@@ -524,7 +548,7 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC ANTI-AFK & CHỐNG SLEEP PC (GIỮ NGUYÊN V3.7)
+-- 5. LOGIC ANTI-AFK & CHỐNG SLEEP PC
 ---------------------------------------------------------
 local antiAfkEnabled = false
 local antiAfkThread = nil
