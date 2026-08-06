@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 4.1 - CAMERA & COMBO FIXED)
+-- TSB MULTI-TOOL SCRIPT (VERSION 4.2 - FULL CODE COMPACT)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -54,13 +54,13 @@ ToggleGuiBtn.MouseButton1Click:Connect(function()
     ToggleGuiBtn.BackgroundColor3 = guiVisible and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(100, 30, 30)
 end)
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (v4.1)
+-- NHÃN HIỂN THỊ PHIÊN BẢN (v4.2)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v4.1"
+VersionLabel.Text = "📌 TSB Tool v4.2"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 12
 VersionLabel.Active = false
@@ -146,7 +146,7 @@ AutoPunchSkillBtn.Parent = MainFrame
 Instance.new("UICorner", AutoPunchSkillBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
--- 2. LOGIC ANTI-LAG (XÓA TOÀN BỘ PHỤ KIỆN/TÓC TAI TỨC THÌ)
+-- 2. LOGIC ANTI-LAG (XÓA PHỤ KIỆN & NOCLIP TOÀN DIỆN)
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
@@ -209,7 +209,6 @@ local function createAntiVoidFloor()
     end
 end
 
--- Xóa phụ kiện & Tóc tai triệt để
 local function stripAndOptimizePart(child)
     if not child then return end
     if child:IsA("Accessory") or child:IsA("Accoutrement") or child:IsA("Shirt") 
@@ -225,14 +224,12 @@ end
 
 local function monitorCharacter(char)
     if not char then return end
-    -- Xóa mọi phụ kiện có sẵn
     for _, child in ipairs(char:GetChildren()) do
         stripAndOptimizePart(child)
     end
     for _, child in ipairs(char:GetDescendants()) do
         stripAndOptimizePart(child)
     end
-    -- Khóa việc thêm phụ kiện mới
     local conn = char.ChildAdded:Connect(function(child)
         if antiLagEnabled then
             task.spawn(function()
@@ -299,7 +296,6 @@ local function enableAntiLag()
         if Workspace.Terrain then Workspace.Terrain:Clear() end
     end)
 
-    -- Quét sạch toàn bộ người chơi hiện tại & người chơi mới vào
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr.Character then monitorCharacter(plr.Character) end
         local pConn = plr.CharacterAdded:Connect(function(char)
@@ -316,7 +312,6 @@ local function enableAntiLag()
     end)
     table.insert(connections, plrJoinedConn)
 
-    -- Quét toàn bộ Workspace
     for _, v in ipairs(Workspace:GetDescendants()) do processObject(v) end
     
     local conn = Workspace.DescendantAdded:Connect(function(child)
@@ -326,7 +321,6 @@ local function enableAntiLag()
     end)
     table.insert(connections, conn)
 
-    -- NOCLIP TOÀN DIỆN
     if noClipConnection then noClipConnection:Disconnect() end
     noClipConnection = RunService.Stepped:Connect(function()
         if antiLagEnabled then
@@ -391,7 +385,7 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. TỌA ĐỘ & FREEZE LOGIC (GIẢM -Y & GIẢM GIẬT CAMERA)
+-- 3. TỌA ĐỘ & FREEZE LOGIC
 ---------------------------------------------------------
 local targetCFrame1 = CFrame.new(
     439.180542, 439.511902, -375.309557,
@@ -424,7 +418,6 @@ local function triggerInstantVoidDeath()
             local hum = char:FindFirstChildOfClass("Humanoid")
             local hrp = char:FindFirstChild("HumanoidRootPart")
             
-            -- Tách camera để chống giật lắc khi nhân vật bị teleport xuống dưới
             Camera.CameraSubject = nil
             
             for _, child in ipairs(char:GetDescendants()) do
@@ -436,7 +429,6 @@ local function triggerInstantVoidDeath()
             if hrp then
                 hrp.AssemblyLinearVelocity = Vector3.zero
                 hrp.AssemblyAngularVelocity = Vector3.zero
-                -- Giảm Y xuống -120 (vừa đủ để chết ngay lập tức mà camera không phải đuổi theo xa)
                 hrp.CFrame = CFrame.new(hrp.Position.X, -120, hrp.Position.Z)
             end
             
@@ -531,7 +523,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 4. LOGIC AUTO SKILL 1 - 2 & AUTO COMBO 3 - 4 (CHUẨN ĐẮM TRƯỚC)
+-- 4. LOGIC AUTO SKILL 1 - 2 & AUTO COMBO 3 - 4
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -547,14 +539,13 @@ local function pressKey(keyCode)
     end)
 end
 
--- Đấm thực sự (Gửi đồng thời Click chuột + Phím M1)
 local function performPunch()
     pcall(function()
-        VirtualUser:Button1Down(Vector2.new(0, 0), Camera.CFrame)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-        task.wait(0.05)
-        VirtualUser:Button1Up(Vector2.new(0, 0), Camera.CFrame)
+        VirtualUser:Button1Down(Vector2.new(0, 0), Camera.CFrame)
+        task.wait(0.08)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+        VirtualUser:Button1Up(Vector2.new(0, 0), Camera.CFrame)
     end)
 end
 
@@ -622,25 +613,22 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- VÒNG LẶP AUTO COMBO (BẮT BUỘC ĐẮM XONG MỚI TUNG CHIÊU 3 -> 4)
+-- VÒNG LẶP AUTO COMBO: ĐẮM -> SKILL 3 -> SKILL 4
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
             task.wait(0.05)
             local target = getValidTargetNear()
             if target then
-                -- Step 1: Đấm 1 phát chuẩn chỉnh
                 performPunch()
-                task.wait(0.25) -- Chờ đấm diễn ra xong
+                task.wait(0.35)
                 
-                -- Step 2: Tung Skill 3
                 local recheck1 = getValidTargetNear()
                 if recheck1 then
                     pressKey(Enum.KeyCode.Three)
                     task.wait(0.3)
                 end
                 
-                -- Step 3: Kiểm tra nếu xác/người vẫn còn thì mới xả Skill 4
                 local recheck2 = getValidTargetNear()
                 if recheck2 then
                     pressKey(Enum.KeyCode.Four)
@@ -720,12 +708,11 @@ AntiAfkBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- TỰ ĐỘNG BẬT LẠI KHI HỒI SINH (RESTORE CAMERA)
+-- TỰ ĐỘNG BẬT LẠI KHI HỒI SINH
 ---------------------------------------------------------
 LocalPlayer.CharacterAdded:Connect(function(char)
     isDying = false
     
-    -- Khôi phục Camera Subject về lại nhân vật mới
     local hum = char:WaitForChild("Humanoid", 3)
     if hum then
         Camera.CameraSubject = hum
