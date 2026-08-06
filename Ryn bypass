@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 3.9.1 - FIXED CONTROLS)
+-- TSB MULTI-TOOL SCRIPT (VERSION 4.0 - OPTIMIZED & FIXED)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -13,7 +13,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 ---------------------------------------------------------
--- 1. TẠO GUI (5 NÚT CỐ ĐỊNH)
+-- 1. TẠO GUI (THU GỌN + NÚT TOGGLE GUI + NÚT MỚI)
 ---------------------------------------------------------
 if PlayerGui:FindFirstChild("TSB_Custom_Tools_Gui") then
     PlayerGui.TSB_Custom_Tools_Gui:Destroy()
@@ -24,96 +24,134 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (CẬP NHẬT V3.9.1)
+-- NÚT BẬT/TẮT TOÀN BỘ GUI (GÓC TRÊN)
+local ToggleGuiBtn = Instance.new("TextButton")
+ToggleGuiBtn.Size = UDim2.new(0, 80, 0, 22)
+ToggleGuiBtn.Position = UDim2.new(0, 10, 0.25, -55)
+ToggleGuiBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ToggleGuiBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleGuiBtn.Text = "👁️ UI: ON"
+ToggleGuiBtn.Font = Enum.Font.GothamBold
+ToggleGuiBtn.TextSize = 11
+ToggleGuiBtn.Active = true
+ToggleGuiBtn.Parent = ScreenGui
+Instance.new("UICorner", ToggleGuiBtn).CornerRadius = UDim.new(0, 6)
+
+-- KHUNG CHỨA CÁC NÚT CÔNG CỤ
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 280, 0, 200)
+MainFrame.Position = UDim2.new(0, 10, 0.25, -30)
+MainFrame.BackgroundTransparency = 1
+MainFrame.Parent = ScreenGui
+
+local guiVisible = true
+ToggleGuiBtn.MouseButton1Click:Connect(function()
+    guiVisible = not guiVisible
+    MainFrame.Visible = guiVisible
+    ToggleGuiBtn.Text = guiVisible and "👁️ UI: ON" or "🙈 UI: OFF"
+    ToggleGuiBtn.BackgroundColor3 = guiVisible and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(100, 30, 30)
+end)
+
+-- NHÃN HIỂN THỊ PHIÊN BẢN (v4.0)
 local VersionLabel = Instance.new("TextLabel")
-VersionLabel.Size = UDim2.new(0, 160, 0, 25)
-VersionLabel.Position = UDim2.new(0, 10, 0.25, -30)
+VersionLabel.Size = UDim2.new(0, 135, 0, 25)
+VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v3.9.1"
+VersionLabel.Text = "📌 TSB Tool v4.0"
 VersionLabel.Font = Enum.Font.GothamBold
-VersionLabel.TextSize = 13
+VersionLabel.TextSize = 12
 VersionLabel.Active = false
-VersionLabel.Draggable = false
-VersionLabel.Parent = ScreenGui
+VersionLabel.Parent = MainFrame
 Instance.new("UICorner", VersionLabel).CornerRadius = UDim.new(0, 8)
 
 -- NÚT 1: ANTI-LAG
 local AntiLagBtn = Instance.new("TextButton")
-AntiLagBtn.Size = UDim2.new(0, 160, 0, 35)
-AntiLagBtn.Position = UDim2.new(0, 10, 0.25, 0)
+AntiLagBtn.Size = UDim2.new(0, 135, 0, 32)
+AntiLagBtn.Position = UDim2.new(0, 0, 0, 30)
 AntiLagBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AntiLagBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 AntiLagBtn.Text = "💥 Anti-Lag: OFF"
 AntiLagBtn.Font = Enum.Font.GothamBold
-AntiLagBtn.TextSize = 12
+AntiLagBtn.TextSize = 11
 AntiLagBtn.Active = true
-AntiLagBtn.Draggable = false
-AntiLagBtn.Parent = ScreenGui
+AntiLagBtn.Parent = MainFrame
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 2: FREEZE SPAWN + AUTO DIE (INSTANT KILL VOID)
+-- NÚT 2: FREEZE SPAWN + AUTO DIE
 local FreezeAutoDieBtn = Instance.new("TextButton")
-FreezeAutoDieBtn.Size = UDim2.new(0, 160, 0, 35)
-FreezeAutoDieBtn.Position = UDim2.new(0, 10, 0.25, 40)
+FreezeAutoDieBtn.Size = UDim2.new(0, 135, 0, 32)
+FreezeAutoDieBtn.Position = UDim2.new(0, 0, 0, 66)
 FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 FreezeAutoDieBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-FreezeAutoDieBtn.Text = "💀 Freeze + Auto Die: OFF"
+FreezeAutoDieBtn.Text = "💀 Freeze + Die: OFF"
 FreezeAutoDieBtn.Font = Enum.Font.GothamBold
-FreezeAutoDieBtn.TextSize = 11
+FreezeAutoDieBtn.TextSize = 10
 FreezeAutoDieBtn.Active = true
-FreezeAutoDieBtn.Draggable = false
-FreezeAutoDieBtn.Parent = ScreenGui
+FreezeAutoDieBtn.Parent = MainFrame
 Instance.new("UICorner", FreezeAutoDieBtn).CornerRadius = UDim.new(0, 8)
 
 -- NÚT 3: FREEZE PURE
 local FreezeOnlyBtn = Instance.new("TextButton")
-FreezeOnlyBtn.Size = UDim2.new(0, 160, 0, 35)
-FreezeOnlyBtn.Position = UDim2.new(0, 10, 0.25, 80)
+FreezeOnlyBtn.Size = UDim2.new(0, 135, 0, 32)
+FreezeOnlyBtn.Position = UDim2.new(0, 0, 0, 102)
 FreezeOnlyBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 FreezeOnlyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 FreezeOnlyBtn.Text = "🧊 Freeze Pure: OFF"
 FreezeOnlyBtn.Font = Enum.Font.GothamBold
-FreezeOnlyBtn.TextSize = 12
+FreezeOnlyBtn.TextSize = 11
 FreezeOnlyBtn.Active = true
-FreezeOnlyBtn.Draggable = false
-FreezeOnlyBtn.Parent = ScreenGui
+FreezeOnlyBtn.Parent = MainFrame
 Instance.new("UICorner", FreezeOnlyBtn).CornerRadius = UDim.new(0, 8)
 
 -- NÚT 4: AUTO SKILL 1-2
 local AutoSkillBtn = Instance.new("TextButton")
-AutoSkillBtn.Size = UDim2.new(0, 160, 0, 35)
-AutoSkillBtn.Position = UDim2.new(0, 10, 0.25, 120)
+AutoSkillBtn.Size = UDim2.new(0, 135, 0, 32)
+AutoSkillBtn.Position = UDim2.new(0, 0, 0, 138)
 AutoSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AutoSkillBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 AutoSkillBtn.Text = "⚔️ Auto Skill 1-2: OFF"
 AutoSkillBtn.Font = Enum.Font.GothamBold
-AutoSkillBtn.TextSize = 11
+AutoSkillBtn.TextSize = 10
 AutoSkillBtn.Active = true
-AutoSkillBtn.Draggable = false
-AutoSkillBtn.Parent = ScreenGui
+AutoSkillBtn.Parent = MainFrame
 Instance.new("UICorner", AutoSkillBtn).CornerRadius = UDim.new(0, 8)
 
 -- NÚT 5: ANTI-AFK
 local AntiAfkBtn = Instance.new("TextButton")
-AntiAfkBtn.Size = UDim2.new(0, 160, 0, 35)
-AntiAfkBtn.Position = UDim2.new(0, 10, 0.25, 160)
+AntiAfkBtn.Size = UDim2.new(0, 135, 0, 32)
+AntiAfkBtn.Position = UDim2.new(0, 0, 0, 174)
 AntiAfkBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AntiAfkBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 AntiAfkBtn.Text = "⏰ Anti-AFK: OFF"
 AntiAfkBtn.Font = Enum.Font.GothamBold
-AntiAfkBtn.TextSize = 12
+AntiAfkBtn.TextSize = 11
 AntiAfkBtn.Active = true
-AntiAfkBtn.Draggable = false
-AntiAfkBtn.Parent = ScreenGui
+AntiAfkBtn.Parent = MainFrame
 Instance.new("UICorner", AntiAfkBtn).CornerRadius = UDim.new(0, 8)
 
+-- NÚT 6: AUTO COMBO (ĐẮM + SKILL 3-4) (NẮM BÊN PHẢI NÚT AUTO SKILL 1-2)
+local AutoPunchSkillBtn = Instance.new("TextButton")
+AutoPunchSkillBtn.Size = UDim2.new(0, 135, 0, 32)
+AutoPunchSkillBtn.Position = UDim2.new(0, 140, 0, 138)
+AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+AutoPunchSkillBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutoPunchSkillBtn.Text = "👊 Auto Combo 3-4: OFF"
+AutoPunchSkillBtn.Font = Enum.Font.GothamBold
+AutoPunchSkillBtn.TextSize = 10
+AutoPunchSkillBtn.Active = true
+AutoPunchSkillBtn.Parent = MainFrame
+Instance.new("UICorner", AutoPunchSkillBtn).CornerRadius = UDim.new(0, 8)
+
 ---------------------------------------------------------
--- 2. LOGIC ANTI-LAG (SỬA BẢO VỆ BẢN THÂN + XÓA PHỤ KIỆN TẤT CẢ)
+-- 2. LOGIC ANTI-LAG (TỐI ĐA + NOCLIP + KHÓA PHỤ KIỆN VĨNH VIỄN)
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
 local hiddenObjects = {}
+local charConnections = {}
+local noClipConnection = nil
 
 local banKeywords = {
     "tree", "bench", "trash", "chair", "table", "bush", "grass", "cloud", 
@@ -124,9 +162,7 @@ local banKeywords = {
 local function isBannedName(name)
     local lowerName = string.lower(name)
     for _, kw in ipairs(banKeywords) do
-        if string.find(lowerName, kw) then
-            return true
-        end
+        if string.find(lowerName, kw) then return true end
     end
     return false
 end
@@ -137,14 +173,6 @@ local function isCharacterObject(obj)
         if plr.Character and (obj == plr.Character or obj:IsDescendantOf(plr.Character)) then
             return true
         end
-    end
-    return false
-end
-
-local function isLocalCharacter(obj)
-    if not obj then return false end
-    if LocalPlayer.Character and (obj == LocalPlayer.Character or obj:IsDescendantOf(LocalPlayer.Character)) then
-        return true
     end
     return false
 end
@@ -180,17 +208,33 @@ local function createAntiVoidFloor()
     end
 end
 
--- Xóa phụ kiện của TẤT CẢ người chơi (Bao gồm cả bản thân)
-local function cleanAccessories(char)
+-- Xóa phụ kiện triệt để & Tối ưu hóa Body Parts
+local function stripAndOptimizePart(child)
+    if not child then return end
+    if child:IsA("Accessory") or child:IsA("Shirt") or child:IsA("Pants") 
+       or child:IsA("ShirtGraphic") or child:IsA("CharacterMesh") 
+       or child:IsA("Decal") or child:IsA("Texture") then
+        child:Destroy()
+    elseif child:IsA("BasePart") then
+        child.Material = Enum.Material.SmoothPlastic
+        child.Reflectance = 0
+        child.CastShadow = false
+    end
+end
+
+local function monitorCharacter(char)
     if not char then return end
-    pcall(function()
-        for _, child in ipairs(char:GetChildren()) do
-            if child:IsA("Accessory") or child:IsA("Shirt") or child:IsA("Pants") 
-               or child:IsA("ShirtGraphic") or child:IsA("CharacterMesh") then
-                child:Destroy()
-            end
+    for _, child in ipairs(char:GetDescendants()) do
+        stripAndOptimizePart(child)
+    end
+    local conn = char.DescendantAdded:Connect(function(child)
+        if antiLagEnabled then
+            task.spawn(function()
+                stripAndOptimizePart(child)
+            end)
         end
     end)
+    table.insert(charConnections, conn)
 end
 
 local function processObject(obj)
@@ -198,18 +242,11 @@ local function processObject(obj)
     pcall(function()
         if obj.Name == "AntiVoidSafetyFloor" or obj:IsA("Camera") or obj:IsA("Terrain") then return end
         
-        -- Nếu là vật thể thuộc nhân vật người chơi
         if isCharacterObject(obj) then
-            -- Xóa phụ kiện trang phục (Của cả bản thân lẫn người khác)
-            if obj:IsA("Accessory") or obj:IsA("Shirt") or obj:IsA("Pants") 
-               or obj:IsA("ShirtGraphic") or obj:IsA("CharacterMesh") then
-                obj:Destroy()
-            end
-            -- BẢO VỆ THÂN THỂ: Không xóa hay làm ẩn BasePart của nhân vật để di chuyển / dùng chiêu bình thường
+            stripAndOptimizePart(obj)
             return
         end
 
-        -- XÓA VẬT THỂ MÔI TRƯỜNG & HIỆU ỨNG SKILL/DASH
         if isBannedName(obj.Name) or obj:IsA("Clouds") or obj:IsA("Explosion") then
             obj:Destroy()
             return
@@ -223,7 +260,6 @@ local function processObject(obj)
             return
         end
 
-        -- Ẩn các khối Map còn lại
         if obj:IsA("BasePart") or obj:IsA("MeshPart") then
             if not hiddenObjects[obj] then
                 hiddenObjects[obj] = {
@@ -253,48 +289,66 @@ local function enableAntiLag()
         Lighting.FogEnd = 9e9
         Lighting.Brightness = 1
         Lighting.ClockTime = 12
-        for _, v in ipairs(Lighting:GetChildren()) do
-            v:Destroy()
-        end
+        for _, v in ipairs(Lighting:GetChildren()) do v:Destroy() end
         if Workspace.Terrain then Workspace.Terrain:Clear() end
     end)
 
-    -- Làm sạch phụ kiện của tất cả người chơi trong phòng (bao gồm bản thân)
+    -- Theo dõi tất cả người chơi hiện tại & người chơi mới vào
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr.Character then
-            cleanAccessories(plr.Character)
-        end
+        if plr.Character then monitorCharacter(plr.Character) end
+        local pConn = plr.CharacterAdded:Connect(function(char)
+            if antiLagEnabled then monitorCharacter(char) end
+        end)
+        table.insert(connections, pConn)
     end
+    
+    local plrJoinedConn = Players.PlayerAdded:Connect(function(plr)
+        local pConn = plr.CharacterAdded:Connect(function(char)
+            if antiLagEnabled then monitorCharacter(char) end
+        end)
+        table.insert(connections, pConn)
+    end)
+    table.insert(connections, plrJoinedConn)
 
     -- Quét toàn bộ Workspace
     for _, v in ipairs(Workspace:GetDescendants()) do processObject(v) end
     
-    -- Xóa vật thể/hiệu ứng lướt mới xuất hiện
     local conn = Workspace.DescendantAdded:Connect(function(child)
         if antiLagEnabled then 
-            task.spawn(function()
-                processObject(child) 
-            end)
+            task.spawn(function() processObject(child) end)
         end
     end)
     table.insert(connections, conn)
 
-    -- Tự động dọn dẹp phụ kiện khi người chơi spawn lại
-    for _, plr in ipairs(Players:GetPlayers()) do
-        local pConn = plr.CharacterAdded:Connect(function(char)
-            if antiLagEnabled then
-                task.wait(0.1)
-                cleanAccessories(char)
+    -- CHẾ ĐỘ NOCLIP TOÀN DIỆN
+    if noClipConnection then noClipConnection:Disconnect() end
+    noClipConnection = RunService.Stepped:Connect(function()
+        if antiLagEnabled then
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr.Character then
+                    for _, part in ipairs(plr.Character:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
             end
-        end)
-        table.insert(connections, pConn)
-    end
+        end
+    end)
 end
 
 local function disableAntiLag()
     antiLagEnabled = false
     for _, conn in ipairs(connections) do conn:Disconnect() end
+    for _, conn in ipairs(charConnections) do conn:Disconnect() end
     connections = {}
+    charConnections = {}
+    
+    if noClipConnection then
+        noClipConnection:Disconnect()
+        noClipConnection = nil
+    end
+
     for obj, data in pairs(hiddenObjects) do
         if obj and obj.Parent then
             pcall(function()
@@ -308,6 +362,15 @@ local function disableAntiLag()
     hiddenObjects = {}
     local floor = Workspace:FindFirstChild("AntiVoidSafetyFloor")
     if floor then floor:Destroy() end
+    
+    -- Trả lại CanCollide ban đầu cho nhân vật
+    if LocalPlayer.Character then
+        for _, part in ipairs(LocalPlayer.Character:GetChildren()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                part.CanCollide = true
+            end
+        end
+    end
 end
 
 AntiLagBtn.MouseButton1Click:Connect(function()
@@ -323,7 +386,7 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. TỌA ĐỘ & FREEZE LOGIC
+-- 3. TỌA ĐỘ & FREEZE LOGIC (GIỮ NGUYÊN HOÀN TOÀN)
 ---------------------------------------------------------
 local targetCFrame1 = CFrame.new(
     439.180542, 439.511902, -375.309557,
@@ -368,9 +431,7 @@ local function triggerInstantVoidDeath()
                 hrp.CFrame = CFrame.new(hrp.Position.X, -2000, hrp.Position.Z)
             end
             
-            if hum then
-                hum.Health = 0
-            end
+            if hum then hum.Health = 0 end
             char:BreakJoints()
         end)
     end
@@ -395,12 +456,11 @@ end
 FreezeAutoDieBtn.MouseButton1Click:Connect(function()
     isAutoDieFrozen = not isAutoDieFrozen
     if isAutoDieFrozen then
-        FreezeAutoDieBtn.Text = "💀 Freeze + Auto Die: ON"
+        FreezeAutoDieBtn.Text = "💀 Freeze + Die: ON"
         FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         isDying = false
         
         setupHealthTracker(LocalPlayer.Character)
-        
         if autoDieConnection then autoDieConnection:Disconnect() end
         
         autoDieConnection = RunService.RenderStepped:Connect(function()
@@ -427,7 +487,7 @@ FreezeAutoDieBtn.MouseButton1Click:Connect(function()
             end
         end)
     else
-        FreezeAutoDieBtn.Text = "💀 Freeze + Auto Die: OFF"
+        FreezeAutoDieBtn.Text = "💀 Freeze + Die: OFF"
         FreezeAutoDieBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
         isDying = false
         if healthConn then healthConn:Disconnect() healthConn = nil end
@@ -462,16 +522,27 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 4. LOGIC AUTO SKILL 1 - 2
+-- 4. LOGIC AUTO SKILL 1 - 2 & AUTO COMBO 3 - 4
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
+
+local autoPunchSkillEnabled = false
+local autoPunchSkillThread = nil
 
 local function pressKey(keyCode)
     pcall(function()
         VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
         task.wait(0.02)
         VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+    end)
+end
+
+local function performPunch()
+    pcall(function()
+        VirtualUser:Button1Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+        task.wait(0.05)
+        VirtualUser:Button1Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
     end)
 end
 
@@ -486,7 +557,6 @@ end
 local function getValidTargetNear()
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
-    
     local myPos = myChar.HumanoidRootPart.Position
 
     for _, plr in ipairs(Players:GetPlayers()) do
@@ -508,16 +578,15 @@ local function getValidTargetNear()
     return nil
 end
 
+-- VÒNG LẶP AUTO SKILL 1 - 2
 local function startAutoSkillLoop()
     autoSkillThread = task.spawn(function()
         while autoSkillEnabled do
             task.wait(0.05)
-            
             local target = getValidTargetNear()
             if target then
                 pressKey(Enum.KeyCode.One)
                 task.wait(0.15)
-                
                 pressKey(Enum.KeyCode.Two)
                 task.wait(0.15)
             end
@@ -527,7 +596,6 @@ end
 
 AutoSkillBtn.MouseButton1Click:Connect(function()
     autoSkillEnabled = not autoSkillEnabled
-    
     if autoSkillEnabled then
         AutoSkillBtn.Text = "⚔️ Auto Skill 1-2: ON"
         AutoSkillBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
@@ -538,6 +606,48 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
         if autoSkillThread then
             task.cancel(autoSkillThread)
             autoSkillThread = nil
+        end
+    end
+end)
+
+-- VÒNG LẶP AUTO COMBO (ĐẮM -> SKILL 3 -> SKILL 4)
+local function startAutoPunchSkillLoop()
+    autoPunchSkillThread = task.spawn(function()
+        while autoPunchSkillEnabled do
+            task.wait(0.05)
+            local target = getValidTargetNear()
+            if target then
+                -- 1. Đấm (Mô phỏng chạm màn hình / Click)
+                performPunch()
+                task.wait(0.1)
+                
+                -- 2. Tung Skill 3
+                pressKey(Enum.KeyCode.Three)
+                task.wait(0.2)
+                
+                -- 3. Kiểm tra lại kẻ địch trước mặt trước khi dùng Skill 4
+                local recheckTarget = getValidTargetNear()
+                if recheckTarget and recheckTarget == target then
+                    pressKey(Enum.KeyCode.Four)
+                    task.wait(0.2)
+                end
+            end
+        end
+    end)
+end
+
+AutoPunchSkillBtn.MouseButton1Click:Connect(function()
+    autoPunchSkillEnabled = not autoPunchSkillEnabled
+    if autoPunchSkillEnabled then
+        AutoPunchSkillBtn.Text = "👊 Auto Combo 3-4: ON"
+        AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        startAutoPunchSkillLoop()
+    else
+        AutoPunchSkillBtn.Text = "👊 Auto Combo 3-4: OFF"
+        AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        if autoPunchSkillThread then
+            task.cancel(autoPunchSkillThread)
+            autoPunchSkillThread = nil
         end
     end
 end)
@@ -576,7 +686,6 @@ end
 
 AntiAfkBtn.MouseButton1Click:Connect(function()
     antiAfkEnabled = not antiAfkEnabled
-
     if antiAfkEnabled then
         AntiAfkBtn.Text = "⏰ Anti-AFK: ON"
         AntiAfkBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
@@ -600,12 +709,11 @@ end)
 ---------------------------------------------------------
 LocalPlayer.CharacterAdded:Connect(function(char)
     isDying = false
-    
     setupHealthTracker(char)
     
     if antiLagEnabled then
         task.wait(0.1)
-        cleanAccessories(char)
+        monitorCharacter(char)
     end
     
     if isAutoDieFrozen then
