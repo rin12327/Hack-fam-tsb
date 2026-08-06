@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 4.7 - PC FIX CORPSE SKILL)
+-- TSB MULTI-TOOL SCRIPT (VERSION 4.8 - PC FIX INSTANT VOID & SKILL 3 ONLY)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -54,13 +54,13 @@ ToggleGuiBtn.MouseButton1Click:Connect(function()
     ToggleGuiBtn.BackgroundColor3 = guiVisible and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(100, 30, 30)
 end)
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (v4.7 PC Fix)
+-- NHÃN HIỂN THỊ PHIÊN BẢN (v4.8 PC Fix)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v4.7 PC"
+VersionLabel.Text = "📌 TSB Tool v4.8 PC"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -80,7 +80,7 @@ AntiLagBtn.Active = true
 AntiLagBtn.Parent = MainFrame
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 2: FREEZE SPAWN + AUTO DIE
+-- NÚT 2: FREEZE SPAWN + AUTO DIE (INSTANT -2000)
 local FreezeAutoDieBtn = Instance.new("TextButton")
 FreezeAutoDieBtn.Size = UDim2.new(0, 135, 0, 32)
 FreezeAutoDieBtn.Position = UDim2.new(0, 0, 0, 66)
@@ -132,13 +132,13 @@ AntiAfkBtn.Active = true
 AntiAfkBtn.Parent = MainFrame
 Instance.new("UICorner", AntiAfkBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 6: AUTO COMBO 3-4 (CHO PHÉP ĐÁNH CẢ XÁC CẦN TUNG SKILL)
+-- NÚT 6: AUTO PUNCH + SKILL 3 (ĐÁNH TRƯỚC 1S & CHO PHÉP ĐÁNH XÁC)
 local AutoPunchSkillBtn = Instance.new("TextButton")
 AutoPunchSkillBtn.Size = UDim2.new(0, 135, 0, 32)
 AutoPunchSkillBtn.Position = UDim2.new(0, 140, 0, 138)
 AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AutoPunchSkillBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoPunchSkillBtn.Text = "👊 Auto Combo 3-4: OFF"
+AutoPunchSkillBtn.Text = "👊 Punch + Skill 3: OFF"
 AutoPunchSkillBtn.Font = Enum.Font.GothamBold
 AutoPunchSkillBtn.TextSize = 10
 AutoPunchSkillBtn.Active = true
@@ -224,18 +224,10 @@ end
 
 local function monitorCharacter(char)
     if not char then return end
-    for _, child in ipairs(char:GetChildren()) do
-        stripAndOptimizePart(child)
-    end
-    for _, child in ipairs(char:GetDescendants()) do
-        stripAndOptimizePart(child)
-    end
+    for _, child in ipairs(char:GetChildren()) do stripAndOptimizePart(child) end
+    for _, child in ipairs(char:GetDescendants()) do stripAndOptimizePart(child) end
     local conn = char.ChildAdded:Connect(function(child)
-        if antiLagEnabled then
-            task.spawn(function()
-                stripAndOptimizePart(child)
-            end)
-        end
+        if antiLagEnabled then task.spawn(function() stripAndOptimizePart(child) end) end
     end)
     table.insert(charConnections, conn)
 end
@@ -315,9 +307,7 @@ local function enableAntiLag()
     for _, v in ipairs(Workspace:GetDescendants()) do processObject(v) end
     
     local conn = Workspace.DescendantAdded:Connect(function(child)
-        if antiLagEnabled then 
-            task.spawn(function() processObject(child) end)
-        end
+        if antiLagEnabled then task.spawn(function() processObject(child) end) end
     end)
     table.insert(connections, conn)
 
@@ -327,9 +317,7 @@ local function enableAntiLag()
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr.Character then
                     for _, part in ipairs(plr.Character:GetChildren()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                        end
+                        if part:IsA("BasePart") then part.CanCollide = false end
                     end
                 end
             end
@@ -385,7 +373,7 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 3. TỌA ĐỘ & FREEZE LOGIC
+-- 3. TỌA ĐỘ & FREEZE LOGIC (-2000 VOID DEATH)
 ---------------------------------------------------------
 local targetCFrame1 = CFrame.new(
     439.180542, 439.511902, -375.309557,
@@ -401,13 +389,13 @@ local targetCFrame2 = CFrame.new(
     0.671368241, 6.45233154e-09, -0.741123915
 )
 
--- FREEZE AUTO DIE (TRỤC Y = -500 SÂU NHẤT)
 local isAutoDieFrozen = false
 local autoDieConnection = nil
 local healthConn = nil
 local lastHealth = 100
 local isDying = false
 
+-- HÀM ÉP CHẾT NGAY TỨC THÌ XUỐNG -2000
 local function triggerInstantVoidDeath()
     if isDying then return end
     isDying = true
@@ -427,9 +415,10 @@ local function triggerInstantVoidDeath()
             end
             
             if hrp then
-                hrp.AssemblyLinearVelocity = Vector3.zero
+                hrp.AssemblyLinearVelocity = Vector3.new(0, -1000, 0)
                 hrp.AssemblyAngularVelocity = Vector3.zero
-                hrp.CFrame = CFrame.new(hrp.Position.X, -500, hrp.Position.Z)
+                -- DỊCH CHUYỂN NGAY XUỐNG -2000
+                hrp.CFrame = CFrame.new(hrp.Position.X, -2000, hrp.Position.Z)
             end
             
             if hum then hum.Health = 0 end
@@ -523,7 +512,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 4. LOGIC AUTO SKILL 1-2 & AUTO COMBO 3-4 (BẢO TOÀN CHO TUNG CẢ VÀO XÁC)
+-- 4. LOGIC AUTO SKILL 1-2 & AUTO COMBO PUNCH + SKILL 3
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -569,13 +558,11 @@ end
 
 local function isEnemyInvulnerable(targetChar)
     if not targetChar then return true end
-    if targetChar:FindFirstChildOfClass("ForceField") then 
-        return true 
-    end
+    if targetChar:FindFirstChildOfClass("ForceField") then return true end
     return false
 end
 
--- KIỂM TRA MỤC TIÊU CÒN SỐNG (DÙNG CHO BẮT ĐẦU VÒNG LẶP COMBO)
+-- BẮT MỤC TIÊU CÒN SỐNG TRONG PHẠM VI 10 STUDS
 local function getValidTargetNear()
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
@@ -600,7 +587,7 @@ local function getValidTargetNear()
     return nil
 end
 
--- KIỂM TRA MỤC TIÊU HOẶC XÁC MỤC TIÊU (DÙNG ĐỂ TUNG TIẾP SKILL 3-4 KHI ĐÃ ĐẮM)
+-- BẮT MỤC TIÊU HOẶC XÁC MỤC TIÊU (DÙNG ĐỂ TUNG SKILL 3 KỂ CẢ KHI HẾT MÁU)
 local function getAnyTargetOrCorpseNear()
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
@@ -654,7 +641,7 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- AUTO COMBO 3-4: ĐẤM TRƯỚC 2S CHIÊU 3, VẪN CHO PHÉP TUNG SKILL VÀO XÁC KHI ĐỐI THỦ CHẾT
+-- AUTO PUNCH + SKILL 3 (ĐÁNH TRƯỚC 1S KHI HỒI, BỎ SKILL 4, CHO PHÉP ĐÁNH XÁC)
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
@@ -663,26 +650,21 @@ local function startAutoPunchSkillLoop()
             if target then
                 local cd3 = getSkill3Cooldown()
                 
-                if cd3 <= 2 then
+                -- ĐÁNH TRƯỚC KHI CHIÊU 3 HỒI XONG 1 GIÂY (cd3 <= 1)
+                if cd3 <= 1 then
                     performPunch()
                     
                     if cd3 > 0 then
                         task.wait(cd3)
                     else
-                        task.wait(0.35)
+                        task.wait(0.15)
                     end
                     
-                    -- KIỂM TRA NỐI SKILL: BỎ QUA KIỂM TRA MÁU (XÁC CÒN Ở ĐÓ VẪN CHO TUNG CHIÊU)
-                    local corpseTarget1 = getAnyTargetOrCorpseNear()
-                    if corpseTarget1 then
+                    -- TUNG SKILL 3 (KỂ CẢ KHI MỤC TIÊU ĐÃ THÀNH XÁC VẪN TUNG)
+                    local corpseTarget = getAnyTargetOrCorpseNear()
+                    if corpseTarget then
                         pressKey(Enum.KeyCode.Three)
-                        task.wait(0.3)
-                    end
-                    
-                    local corpseTarget2 = getAnyTargetOrCorpseNear()
-                    if corpseTarget2 then
-                        pressKey(Enum.KeyCode.Four)
-                        task.wait(0.3)
+                        task.wait(0.35)
                     end
                 end
             end
@@ -693,11 +675,11 @@ end
 AutoPunchSkillBtn.MouseButton1Click:Connect(function()
     autoPunchSkillEnabled = not autoPunchSkillEnabled
     if autoPunchSkillEnabled then
-        AutoPunchSkillBtn.Text = "👊 Auto Combo 3-4: ON"
+        AutoPunchSkillBtn.Text = "👊 Punch + Skill 3: ON"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         startAutoPunchSkillLoop()
     else
-        AutoPunchSkillBtn.Text = "👊 Auto Combo 3-4: OFF"
+        AutoPunchSkillBtn.Text = "👊 Punch + Skill 3: OFF"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
         if autoPunchSkillThread then
             task.cancel(autoPunchSkillThread)
@@ -765,9 +747,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     isDying = false
     
     local hum = char:WaitForChild("Humanoid", 3)
-    if hum then
-        Camera.CameraSubject = hum
-    end
+    if hum then Camera.CameraSubject = hum end
     
     setupHealthTracker(char)
     
