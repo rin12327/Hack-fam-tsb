@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 5.3 - ZERO EFFECTS & INFINITE LOOP)
+-- TSB MULTI-TOOL SCRIPT (VERSION 5.4 - STRICT SKILL 3 COOLDOWN & TIMING)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v5.3"
+VersionLabel.Text = "📌 TSB Tool v5.4"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -363,7 +363,6 @@ local function enableAntiLag()
     end)
     table.insert(connections, conn)
 
-    -- SỬA LỖI HIỆU ỨNG CHIÊU TỰ PHÁT SINH: DIỆT HIỆU ỨNG THEO TỪNG FRAME
     if continuousCleanConnection then continuousCleanConnection:Disconnect() end
     continuousCleanConnection = RunService.RenderStepped:Connect(function()
         if antiLagEnabled then
@@ -561,7 +560,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC COMBO (LẶP LIÊN TỤC VĨNH CỬU + ĐÚNG TIMING CHIÊU 3)
+-- 5. LOGIC COMBO (LẶP VĨNH CỬU - BẮT BUỘC ĐỜI CHIÊU 3 HỒI XONG MỚI ĐẤM)
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -600,7 +599,7 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- AUTO LOOP SKILL 3 VĨNH CỬU:
+-- LOGIC MỚI: CHỜ CHIÊU 3 HỒI HẲN BẰNG 0 MỚI CHO PHÉP ĐẤM + TUNG CHIÊU 3
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
@@ -610,17 +609,14 @@ local function startAutoPunchSkillLoop()
             if target then
                 local cd3 = getSkill3Cooldown()
                 
+                -- Chỉ thực hiện khi Chiêu 3 HOÀN TOÀN HỒI XONG (cd3 == 0)
                 if cd3 == 0 then
-                    -- CHIÊU 3 RẢNH (HỒI XONG) -> ĐẤM 1 CÁI -> XẢ CHIÊU 3 NGAY
-                    performPunch()
-                    task.wait(0.1)
-                    pressKey(Enum.KeyCode.Three)
+                    performPunch()           -- Tung 1 cú đấm
+                    task.wait(0.08)          -- Chờ cực ngắn
+                    pressKey(Enum.KeyCode.Three) -- Tung chiêu 3
                     
-                    -- Chờ 0.5s để game bắt đầu cooldown
+                    -- Chờ 0.5s để game chuyển trạng thái Cooldown
                     task.wait(0.5)
-                else
-                    -- CHIÊU 3 ĐANG HỒI -> NẰM YÊN CHỜ HOÀN TOÀN, KHÔNG ĐẤM BẤT KỲ CÁI NÀO
-                    task.wait(0.1)
                 end
             end
         end
