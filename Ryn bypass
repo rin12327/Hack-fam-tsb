@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 5.5 - 1S DELAY BEFORE SKILL 3)
+-- TSB MULTI-TOOL SCRIPT (VERSION 5.6 - 2S DELAY & SINGLE CLICK PUNCH)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v5.5"
+VersionLabel.Text = "📌 TSB Tool v5.6"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -142,18 +142,17 @@ Instance.new("UICorner", AutoPunchSkillBtn).CornerRadius = UDim.new(0, 8)
 local function pressKey(keyCode)
     pcall(function()
         VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
-        task.wait(0.02)
+        task.wait(0.05)
         VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
     end)
 end
 
+-- SỬA: CHỈ NHẤP CƠ HỌC 1 LẦN NHƯ NGƯỜI CHƠI CHẠM MÀN HÌNH
 local function performPunch()
     pcall(function()
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-        VirtualUser:Button1Down(Vector2.new(0, 0), Camera.CFrame)
         task.wait(0.05)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-        VirtualUser:Button1Up(Vector2.new(0, 0), Camera.CFrame)
     end)
 end
 
@@ -560,7 +559,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC COMBO (CHỜ CHIÊU 3 HỒI -> ĐẤM 1 CÁI -> ĐỜI 1 GIÂY -> TUNG CHIÊU 3)
+-- 5. LOGIC COMBO (CHỜ CHIÊU 3 HỒI -> ĐẤM 1 CÁI MỚI -> ĐỜI 2 GIÂY -> TUNG CHIÊU 3)
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -599,27 +598,27 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- LOGIC MỚI: CHỜ CHIÊU 3 HỒI -> ĐẤM 1 CÁI -> CHỜ 1 GIÂY -> TUNG CHIÊU 3
+-- LOGIC MỚI: CHỜ CHIÊU 3 HỒI -> ĐẤM 1 CÁI CHUẨN MÀN HÌNH -> ĐỢI 2 GIÂY -> TUNG CHIÊU 3
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
-            task.wait(0.05)
+            task.wait(0.1)
             local target = getValidAliveTarget()
             
             if target then
                 local cd3 = getSkill3Cooldown()
                 
-                -- Chỉ thực hiện khi Chiêu 3 HOÀN TOÀN HỒI XONG (cd3 == 0)
+                -- Chỉ đánh khi Chiêu 3 đã hoàn thành thời gian hồi (cd3 == 0)
                 if cd3 == 0 then
-                    performPunch()               -- 1. Đấm 1 cái
-                    task.wait(1)                 -- 2. Đợi đúng 1 giây
+                    performPunch()               -- 1. Đấm 1 cái tự nhiên
+                    task.wait(2)                 -- 2. Đợi đủ 2 giây (có khoảng cách)
                     
-                    -- Kiểm tra lại xem target còn sống không trước khi xả chiêu
+                    -- Kiểm tra xem đối thủ còn sống trước khi xả Chiêu 3
                     if getValidAliveTarget() then
                         pressKey(Enum.KeyCode.Three) -- 3. Tung chiêu 3
                     end
                     
-                    -- Chờ 0.5s để hệ thống cập nhật lại thời gian hồi chiêu
+                    -- Chờ thêm 0.5s để hệ thống nhận diện thời gian hồi mới
                     task.wait(0.5)
                 end
             end
