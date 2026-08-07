@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 5.1 - FULL CODE EXTREME OPTIMIZED)
+-- TSB MULTI-TOOL SCRIPT (VERSION 5.2 - PERFECT TIMING & ANTIVOID FIXED)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -14,7 +14,7 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Camera = Workspace.CurrentCamera
 
 ---------------------------------------------------------
--- 1. TẠO GUI (THU GỌN + NÚT TOGGLE GUI)
+-- 1. GUI
 ---------------------------------------------------------
 if PlayerGui:FindFirstChild("TSB_Custom_Tools_Gui") then
     PlayerGui.TSB_Custom_Tools_Gui:Destroy()
@@ -25,7 +25,6 @@ ScreenGui.Name = "TSB_Custom_Tools_Gui"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- NÚT BẬT/TẮT TOÀN BỘ GUI
 local ToggleGuiBtn = Instance.new("TextButton")
 ToggleGuiBtn.Size = UDim2.new(0, 80, 0, 22)
 ToggleGuiBtn.Position = UDim2.new(0, 10, 0.25, -55)
@@ -38,7 +37,6 @@ ToggleGuiBtn.Active = true
 ToggleGuiBtn.Parent = ScreenGui
 Instance.new("UICorner", ToggleGuiBtn).CornerRadius = UDim.new(0, 6)
 
--- KHUNG CHỨA CÁC NÚT CÔNG CỤ
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 280, 0, 210)
@@ -54,20 +52,18 @@ ToggleGuiBtn.MouseButton1Click:Connect(function()
     ToggleGuiBtn.BackgroundColor3 = guiVisible and Color3.fromRGB(40, 40, 40) or Color3.fromRGB(100, 30, 30)
 end)
 
--- NHÃN HIỂN THỊ PHIÊN BẢN (v5.1 Extreme)
 local VersionLabel = Instance.new("TextLabel")
 VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v5.1"
+VersionLabel.Text = "📌 TSB Tool v5.2"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
 VersionLabel.Parent = MainFrame
 Instance.new("UICorner", VersionLabel).CornerRadius = UDim.new(0, 8)
 
--- NÚT 1: ANTI-LAG & FULL NOCLIP & STRIP
 local AntiLagBtn = Instance.new("TextButton")
 AntiLagBtn.Size = UDim2.new(0, 135, 0, 32)
 AntiLagBtn.Position = UDim2.new(0, 0, 0, 30)
@@ -80,7 +76,6 @@ AntiLagBtn.Active = true
 AntiLagBtn.Parent = MainFrame
 Instance.new("UICorner", AntiLagBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 2: FREEZE SPAWN + AUTO DIE (-2000 VOID)
 local FreezeAutoDieBtn = Instance.new("TextButton")
 FreezeAutoDieBtn.Size = UDim2.new(0, 135, 0, 32)
 FreezeAutoDieBtn.Position = UDim2.new(0, 0, 0, 66)
@@ -93,7 +88,6 @@ FreezeAutoDieBtn.Active = true
 FreezeAutoDieBtn.Parent = MainFrame
 Instance.new("UICorner", FreezeAutoDieBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 3: FREEZE PURE
 local FreezeOnlyBtn = Instance.new("TextButton")
 FreezeOnlyBtn.Size = UDim2.new(0, 135, 0, 32)
 FreezeOnlyBtn.Position = UDim2.new(0, 0, 0, 102)
@@ -106,7 +100,6 @@ FreezeOnlyBtn.Active = true
 FreezeOnlyBtn.Parent = MainFrame
 Instance.new("UICorner", FreezeOnlyBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 4: AUTO SKILL 1-2
 local AutoSkillBtn = Instance.new("TextButton")
 AutoSkillBtn.Size = UDim2.new(0, 135, 0, 32)
 AutoSkillBtn.Position = UDim2.new(0, 0, 0, 138)
@@ -119,7 +112,6 @@ AutoSkillBtn.Active = true
 AutoSkillBtn.Parent = MainFrame
 Instance.new("UICorner", AutoSkillBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 5: ANTI-AFK
 local AntiAfkBtn = Instance.new("TextButton")
 AntiAfkBtn.Size = UDim2.new(0, 135, 0, 32)
 AntiAfkBtn.Position = UDim2.new(0, 0, 0, 174)
@@ -132,7 +124,6 @@ AntiAfkBtn.Active = true
 AntiAfkBtn.Parent = MainFrame
 Instance.new("UICorner", AntiAfkBtn).CornerRadius = UDim.new(0, 8)
 
--- NÚT 6: AUTO PERFECT COMBO (TIMING SKILL 3)
 local AutoPunchSkillBtn = Instance.new("TextButton")
 AutoPunchSkillBtn.Size = UDim2.new(0, 135, 0, 32)
 AutoPunchSkillBtn.Position = UDim2.new(0, 140, 0, 138)
@@ -146,7 +137,7 @@ AutoPunchSkillBtn.Parent = MainFrame
 Instance.new("UICorner", AutoPunchSkillBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
--- 2. HÀM XỬ LÝ NHẤN PHÍM VÀ ĐẤM
+-- 2. LOGIC BẤM PHÍM & TÌM MỤC TIÊU SỐNG
 ---------------------------------------------------------
 local function pressKey(keyCode)
     pcall(function()
@@ -166,7 +157,7 @@ local function performPunch()
     end)
 end
 
--- LẤY COOLDOWN SKILL 3
+-- TÍNH CHÍNH XÁC COOLDOWN CHIÊU 3
 local function getSkill3Cooldown()
     local remaining = 0
     pcall(function()
@@ -185,7 +176,7 @@ local function getSkill3Cooldown()
     return remaining
 end
 
--- TÌM MỤC TIÊU CÒN SỐNG (KHÔNG ĐÁNH XÁC CHẾT VÀ BẤM BẤT TỬ)
+-- CHỈ LẤY NGƯỜI CÒN SỐNG, KHÔNG LẤY XÁC CHẾT, KHÔNG LẤY BẤT TỬ
 local function getValidAliveTarget()
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
@@ -197,7 +188,6 @@ local function getValidAliveTarget()
             local hum = targetChar:FindFirstChildOfClass("Humanoid")
             local hrp = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso")
             
-            -- Bắt buộc Humanoid còn sống, không có ForceField (bất tử)
             if hum and hum.Health > 0 and hrp and not targetChar:FindFirstChildOfClass("ForceField") then
                 if (hrp.Position - myPos).Magnitude <= 12 then
                     return targetChar
@@ -209,7 +199,7 @@ local function getValidAliveTarget()
 end
 
 ---------------------------------------------------------
--- 3. LOGIC ANTI-LAG "SÁT THỦ" & FULL NOCLIP & DAYTIME
+-- 3. ANTI-LAG + TRA LẠI ANTI-VOID FLOOR + NOCLIP + DAYTIME
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
@@ -240,46 +230,11 @@ local function isCharacterObject(obj)
     return false
 end
 
--- TỐI ƯU CƠ THỂ NGƯỜI CHƠI (LỘT SẠCH ĐỒ VÀ ANIMATION ĐỂ MƯỢT)
-local function stripAndOptimizeCharacter(char)
-    if not char then return end
-    pcall(function()
-        -- Xóa quần áo, phụ kiện, Decal
-        for _, child in ipairs(char:GetDescendants()) do
-            if child:IsA("Accessory") or child:IsA("Accoutrement") or child:IsA("Shirt") 
-               or child:IsA("Pants") or child:IsA("ShirtGraphic") or child:IsA("CharacterMesh") 
-               or child:IsA("Decal") or child:IsA("Texture") or child:IsA("ParticleEmitter") then
-                child:Destroy()
-            elseif child:IsA("BasePart") then
-                child.Material = Enum.Material.SmoothPlastic
-                child.Reflectance = 0
-                child.CastShadow = false
-                
-                -- Xóa tay chân nếu muốn (Giữ lại Torso và Head để dễ nhận diện)
-                if child.Name == "Left Arm" or child.Name == "Right Arm" or child.Name == "Left Leg" or child.Name == "Right Leg"
-                   or child.Name == "LeftUpperArm" or child.Name == "RightUpperArm" or child.Name == "LeftLowerArm" or child.Name == "RightLowerArm"
-                   or child.Name == "LeftHand" or child.Name == "RightHand" or child.Name == "LeftUpperLeg" or child.Name == "RightUpperLeg"
-                   or child.Name == "LeftLowerLeg" or child.Name == "RightLowerLeg" or child.Name == "LeftFoot" or child.Name == "RightFoot" then
-                    child.Transparency = 1
-                end
-            end
-        end
-        
-        -- Tắt hoàn toàn Animation để giảm tải CPU
-        local animate = char:FindFirstChild("Animate")
-        if animate then animate.Disabled = true end
-        
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then
-            local animator = hum:FindFirstChildOfClass("Animator")
-            if animator then animator:Destroy() end
-        end
-    end)
-end
-
+-- TỰ ĐỘNG TẠO SÀN CHỐNG RƠI KHỎI MAP (ANTI-VOID)
 local function createAntiVoidFloor()
-    if not Workspace:FindFirstChild("AntiVoidSafetyFloor") then
-        local floor = Instance.new("Part")
+    local floor = Workspace:FindFirstChild("AntiVoidSafetyFloor")
+    if not floor then
+        floor = Instance.new("Part")
         floor.Name = "AntiVoidSafetyFloor"
         floor.Size = Vector3.new(200000, 20, 200000)
         floor.Position = Vector3.new(0, -20, 0)
@@ -291,14 +246,45 @@ local function createAntiVoidFloor()
     end
 end
 
+local function stripAndOptimizeCharacter(char)
+    if not char then return end
+    pcall(function()
+        for _, child in ipairs(char:GetDescendants()) do
+            if child:IsA("Accessory") or child:IsA("Accoutrement") or child:IsA("Shirt") 
+               or child:IsA("Pants") or child:IsA("ShirtGraphic") or child:IsA("CharacterMesh") 
+               or child:IsA("Decal") or child:IsA("Texture") or child:IsA("ParticleEmitter") then
+                child:Destroy()
+            elseif child:IsA("BasePart") then
+                child.Material = Enum.Material.SmoothPlastic
+                child.Reflectance = 0
+                child.CastShadow = false
+                
+                if child.Name == "Left Arm" or child.Name == "Right Arm" or child.Name == "Left Leg" or child.Name == "Right Leg"
+                   or child.Name == "LeftUpperArm" or child.Name == "RightUpperArm" or child.Name == "LeftLowerArm" or child.Name == "RightLowerArm"
+                   or child.Name == "LeftHand" or child.Name == "RightHand" or child.Name == "LeftUpperLeg" or child.Name == "RightUpperLeg"
+                   or child.Name == "LeftLowerLeg" or child.Name == "RightLowerLeg" or child.Name == "LeftFoot" or child.Name == "RightFoot" then
+                    child.Transparency = 1
+                end
+            end
+        end
+        
+        local animate = char:FindFirstChild("Animate")
+        if animate then animate.Disabled = true end
+        
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            local animator = hum:FindFirstChildOfClass("Animator")
+            if animator then animator:Destroy() end
+        end
+    end)
+end
+
 local function processObject(obj)
     if not obj or not antiLagEnabled then return end
     pcall(function()
         if obj.Name == "AntiVoidSafetyFloor" or obj:IsA("Camera") or obj:IsA("Terrain") then return end
 
-        if isCharacterObject(obj) then
-            return
-        end
+        if isCharacterObject(obj) then return end
 
         if isBannedName(obj.Name) or obj:IsA("Clouds") or obj:IsA("Explosion") then
             obj:Destroy()
@@ -332,14 +318,13 @@ end
 
 local function enableAntiLag()
     antiLagEnabled = true
-    createAntiVoidFloor()
+    createAntiVoidFloor() -- Khôi phục AntiVoid Floor
     
-    -- ÉP TRỜI SÁNG (CLOCKTIME 12 - MƯỢT NHẤT CHO GPU)
     pcall(function()
         Lighting.GlobalShadows = false
         Lighting.FogEnd = 9e9
         Lighting.Brightness = 1
-        Lighting.ClockTime = 12
+        Lighting.ClockTime = 12 -- Ép trời sáng cực mượt
         for _, v in ipairs(Lighting:GetChildren()) do
             if v:IsA("Clouds") or v:IsA("Sky") or v:IsA("PostEffect") or v:IsA("Atmosphere") then 
                 v:Destroy() 
@@ -348,7 +333,6 @@ local function enableAntiLag()
         if Workspace.Terrain then Workspace.Terrain:Clear() end
     end)
 
-    -- XỬ LÝ NGƯỜI CHƠI HIỆN TẠI VÀ MỚI VÀO / REPAWN
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr.Character then stripAndOptimizeCharacter(plr.Character) end
         local pConn = plr.CharacterAdded:Connect(function(char)
@@ -378,7 +362,6 @@ local function enableAntiLag()
     end)
     table.insert(connections, conn)
 
-    -- FULL NOCLIP TOÀN BỘ CƠ THỂ
     if noClipConnection then noClipConnection:Disconnect() end
     noClipConnection = RunService.Stepped:Connect(function()
         if antiLagEnabled and LocalPlayer.Character then
@@ -430,7 +413,7 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 4. TỌA ĐỘ & FREEZE LOGIC (-2000 VOID DEATH)
+-- 4. FREEZE LOGIC (-2000 VOID DEATH)
 ---------------------------------------------------------
 local targetCFrame1 = CFrame.new(
     439.180542, 439.511902, -375.309557,
@@ -539,7 +522,6 @@ FreezeAutoDieBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- FREEZE PURE
 local isPureFrozen = false
 local pureFreezeConnection = nil
 
@@ -566,16 +548,16 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC AUTO COMBO SKILL 1, 2 VÀ SKILL 3 PURE TIMING
+-- 5. LOGIC COMBO (ÉP BUỘC CHỜ HỒI CHIÊU 3 MỚI ĐƯỢC ĐÁNH)
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
 
 local autoPunchSkillEnabled = false
 local autoPunchSkillThread = nil
-local isExecutingCombo = false -- Biến khóa chống đánh thừa
+local isExecutingCombo = false
 
--- AUTO SKILL 1 - 2 (TỪNG LẦN, CHỈ ĐÁNH NGƯỜI SỐNG)
+-- AUTO SKILL 1 - 2 (TỪNG LẦN)
 local function startAutoSkillLoop()
     autoSkillThread = task.spawn(function()
         while autoSkillEnabled do
@@ -607,36 +589,37 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- AUTO LOOP SKILL 3 (ĐẤM 1 CÁI -> TUNG CHIÊU 3 -> NẰM CHỜ HỒI)
+-- AUTO LOOP SKILL 3 CHUẨN ĐÚNG YÊU CẦU:
+-- 1. CHIÊU 3 CÒN HỒI -> NẰM CHỜ, TUYỆT ĐỐI KHÔNG ĐÁNH BẤT KỲ CÁI NÀO.
+-- 2. CHIÊU 3 HỒI XONG -> ĐÁNH ĐÚNG 1 CÁI -> TUNG CHIÊU 3 NGAY -> LẶP LẠI QUY TRÌNH CHỜ.
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
             task.wait(0.05)
             local target = getValidAliveTarget()
             
-            -- Chỉ hoạt động khi có mục tiêu CÒN SỐNG ở gần và KHÔNG trong tiến trình combo
             if target and not isExecutingCombo then
                 local cd3 = getSkill3Cooldown()
                 
-                -- Nếu chiêu 3 chưa hồi xong -> TỰ ĐỘNG CHỜ, KHÔNG ĐÁNH BỪA
                 if cd3 > 0 then
+                    -- NẾU CHIÊU 3 ĐANG HỒI: TỰ ĐỘNG NẰM CHỜ ĐÚNG THỜI GIAN COOLDOWN, KHÔNG ĐẤM
                     task.wait(cd3)
                 else
-                    -- Chiêu 3 đã hồi xong (cd3 == 0) -> KÍCH HOẠT COMBO
+                    -- CHIÊU 3 ĐÃ HỒI XONG HOÀN TOÀN (cd3 == 0) -> MỚI ĐƯỢC PHÉP ĐÁNH 1 CÁI VÀ TUNG SKILL
                     isExecutingCombo = true
                     
-                    performPunch() -- Đấm ĐÚNG 1 CÁI mở màn
-                    task.wait(0.15)
+                    performPunch() -- Đấm ĐÚNG 1 CÁI
+                    task.wait(0.12)
                     
-                    pressKey(Enum.KeyCode.Three) -- Tung chiêu 3 ngay lập tức
-                    task.wait(0.5)
+                    pressKey(Enum.KeyCode.Three) -- Tung Chiêu 3
+                    task.wait(0.4)
                     
-                    -- Chờ cho tới khi chiêu 3 bắt đầu hồi và kết thúc hoàn toàn
+                    -- Chờ cho tới khi hệ thống xác nhận chiêu 3 đã được dùng và đang bước vào Cooldown mới
                     repeat 
-                        task.wait(0.2) 
-                    until getSkill3Cooldown() == 0 or not autoPunchSkillEnabled
+                        task.wait(0.1) 
+                    until getSkill3Cooldown() > 0 or not autoPunchSkillEnabled
                     
-                    isExecutingCombo = false -- Mở khóa để chuẩn bị cho lượt tiếp theo
+                    isExecutingCombo = false
                 end
             end
         end
@@ -662,7 +645,7 @@ AutoPunchSkillBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 6. LOGIC ANTI-AFK
+-- 6. ANTI-AFK
 ---------------------------------------------------------
 local antiAfkEnabled = false
 local antiAfkThread = nil
@@ -714,7 +697,7 @@ AntiAfkBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 7. TỰ ĐỘNG BẬT LẠI KHI HỒI SINH (RESPAWN HANDLE)
+-- 7. TỰ ĐỘNG BẬT LẠI KHI HỒI SINH
 ---------------------------------------------------------
 LocalPlayer.CharacterAdded:Connect(function(char)
     isDying = false
