@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 5.2 - PERFECT TIMING & ANTIVOID FIXED)
+-- TSB MULTI-TOOL SCRIPT (VERSION 5.3 - ZERO EFFECTS & INFINITE LOOP)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v5.2"
+VersionLabel.Text = "📌 TSB Tool v5.3"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -151,13 +151,12 @@ local function performPunch()
     pcall(function()
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
         VirtualUser:Button1Down(Vector2.new(0, 0), Camera.CFrame)
-        task.wait(0.06)
+        task.wait(0.05)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
         VirtualUser:Button1Up(Vector2.new(0, 0), Camera.CFrame)
     end)
 end
 
--- TÍNH CHÍNH XÁC COOLDOWN CHIÊU 3
 local function getSkill3Cooldown()
     local remaining = 0
     pcall(function()
@@ -166,8 +165,9 @@ local function getSkill3Cooldown()
             for _, slot in ipairs(hotbar:GetDescendants()) do
                 if slot.Name == "3" or slot.Name == "Slot3" or string.find(slot.Name, "3") then
                     local cdText = slot:FindFirstChildOfClass("TextLabel")
-                    if cdText and cdText.Visible and tonumber(cdText.Text) then
-                        remaining = tonumber(cdText.Text) or 0
+                    if cdText and cdText.Visible then
+                        local num = tonumber(cdText.Text)
+                        if num then remaining = num end
                     end
                 end
             end
@@ -176,7 +176,6 @@ local function getSkill3Cooldown()
     return remaining
 end
 
--- CHỈ LẤY NGƯỜI CÒN SỐNG, KHÔNG LẤY XÁC CHẾT, KHÔNG LẤY BẤT TỬ
 local function getValidAliveTarget()
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
@@ -199,17 +198,19 @@ local function getValidAliveTarget()
 end
 
 ---------------------------------------------------------
--- 3. ANTI-LAG + TRA LẠI ANTI-VOID FLOOR + NOCLIP + DAYTIME
+-- 3. ANTI-LAG CỰC HẠN + ANTI-VOID FLOOR + NOCLIP + DAYTIME
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
 local hiddenObjects = {}
 local noClipConnection = nil
+local continuousCleanConnection = nil
 
 local banKeywords = {
     "tree", "bench", "trash", "chair", "table", "bush", "grass", "cloud", 
     "rock", "prop", "destructible", "breakable", "building", "wall", "fence",
-    "dash", "vfx", "fx", "aura", "slash", "particle", "eff", "impact", "shockwave"
+    "dash", "vfx", "fx", "aura", "slash", "particle", "eff", "impact", "shockwave",
+    "smoke", "dust", "debris", "blast", "hit", "ring", "wave", "emit"
 }
 
 local function isBannedName(name)
@@ -230,7 +231,6 @@ local function isCharacterObject(obj)
     return false
 end
 
--- TỰ ĐỘNG TẠO SÀN CHỐNG RƠI KHỎI MAP (ANTI-VOID)
 local function createAntiVoidFloor()
     local floor = Workspace:FindFirstChild("AntiVoidSafetyFloor")
     if not floor then
@@ -252,7 +252,8 @@ local function stripAndOptimizeCharacter(char)
         for _, child in ipairs(char:GetDescendants()) do
             if child:IsA("Accessory") or child:IsA("Accoutrement") or child:IsA("Shirt") 
                or child:IsA("Pants") or child:IsA("ShirtGraphic") or child:IsA("CharacterMesh") 
-               or child:IsA("Decal") or child:IsA("Texture") or child:IsA("ParticleEmitter") then
+               or child:IsA("Decal") or child:IsA("Texture") or child:IsA("ParticleEmitter")
+               or child:IsA("Trail") or child:IsA("Beam") or child:IsA("Highlight") then
                 child:Destroy()
             elseif child:IsA("BasePart") then
                 child.Material = Enum.Material.SmoothPlastic
@@ -318,13 +319,13 @@ end
 
 local function enableAntiLag()
     antiLagEnabled = true
-    createAntiVoidFloor() -- Khôi phục AntiVoid Floor
+    createAntiVoidFloor()
     
     pcall(function()
         Lighting.GlobalShadows = false
         Lighting.FogEnd = 9e9
         Lighting.Brightness = 1
-        Lighting.ClockTime = 12 -- Ép trời sáng cực mượt
+        Lighting.ClockTime = 12
         for _, v in ipairs(Lighting:GetChildren()) do
             if v:IsA("Clouds") or v:IsA("Sky") or v:IsA("PostEffect") or v:IsA("Atmosphere") then 
                 v:Destroy() 
@@ -337,7 +338,7 @@ local function enableAntiLag()
         if plr.Character then stripAndOptimizeCharacter(plr.Character) end
         local pConn = plr.CharacterAdded:Connect(function(char)
             if antiLagEnabled then
-                task.wait(0.2)
+                task.wait(0.1)
                 stripAndOptimizeCharacter(char)
             end
         end)
@@ -347,7 +348,7 @@ local function enableAntiLag()
     local plrJoinedConn = Players.PlayerAdded:Connect(function(plr)
         local pConn = plr.CharacterAdded:Connect(function(char)
             if antiLagEnabled then
-                task.wait(0.2)
+                task.wait(0.1)
                 stripAndOptimizeCharacter(char)
             end
         end)
@@ -361,6 +362,20 @@ local function enableAntiLag()
         if antiLagEnabled then task.spawn(function() processObject(child) end) end
     end)
     table.insert(connections, conn)
+
+    -- SỬA LỖI HIỆU ỨNG CHIÊU TỰ PHÁT SINH: DIỆT HIỆU ỨNG THEO TỪNG FRAME
+    if continuousCleanConnection then continuousCleanConnection:Disconnect() end
+    continuousCleanConnection = RunService.RenderStepped:Connect(function()
+        if antiLagEnabled then
+            for _, obj in ipairs(Workspace:GetChildren()) do
+                if not isCharacterObject(obj) and obj.Name ~= "AntiVoidSafetyFloor" and not obj:IsA("Camera") and not obj:IsA("Terrain") then
+                    if isBannedName(obj.Name) or obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Highlight") or obj:IsA("Beam") then
+                        obj:Destroy()
+                    end
+                end
+            end
+        end
+    end)
 
     if noClipConnection then noClipConnection:Disconnect() end
     noClipConnection = RunService.Stepped:Connect(function()
@@ -380,10 +395,8 @@ local function disableAntiLag()
     for _, conn in ipairs(connections) do conn:Disconnect() end
     connections = {}
     
-    if noClipConnection then
-        noClipConnection:Disconnect()
-        noClipConnection = nil
-    end
+    if noClipConnection then noClipConnection:Disconnect() noClipConnection = nil end
+    if continuousCleanConnection then continuousCleanConnection:Disconnect() continuousCleanConnection = nil end
 
     for obj, data in pairs(hiddenObjects) do
         if obj and obj.Parent then
@@ -548,16 +561,14 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC COMBO (ÉP BUỘC CHỜ HỒI CHIÊU 3 MỚI ĐƯỢC ĐÁNH)
+-- 5. LOGIC COMBO (LẶP LIÊN TỤC VĨNH CỬU + ĐÚNG TIMING CHIÊU 3)
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
 
 local autoPunchSkillEnabled = false
 local autoPunchSkillThread = nil
-local isExecutingCombo = false
 
--- AUTO SKILL 1 - 2 (TỪNG LẦN)
 local function startAutoSkillLoop()
     autoSkillThread = task.spawn(function()
         while autoSkillEnabled do
@@ -589,37 +600,27 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- AUTO LOOP SKILL 3 CHUẨN ĐÚNG YÊU CẦU:
--- 1. CHIÊU 3 CÒN HỒI -> NẰM CHỜ, TUYỆT ĐỐI KHÔNG ĐÁNH BẤT KỲ CÁI NÀO.
--- 2. CHIÊU 3 HỒI XONG -> ĐÁNH ĐÚNG 1 CÁI -> TUNG CHIÊU 3 NGAY -> LẶP LẠI QUY TRÌNH CHỜ.
+-- AUTO LOOP SKILL 3 VĨNH CỬU:
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
             task.wait(0.05)
             local target = getValidAliveTarget()
             
-            if target and not isExecutingCombo then
+            if target then
                 local cd3 = getSkill3Cooldown()
                 
-                if cd3 > 0 then
-                    -- NẾU CHIÊU 3 ĐANG HỒI: TỰ ĐỘNG NẰM CHỜ ĐÚNG THỜI GIAN COOLDOWN, KHÔNG ĐẤM
-                    task.wait(cd3)
+                if cd3 == 0 then
+                    -- CHIÊU 3 RẢNH (HỒI XONG) -> ĐẤM 1 CÁI -> XẢ CHIÊU 3 NGAY
+                    performPunch()
+                    task.wait(0.1)
+                    pressKey(Enum.KeyCode.Three)
+                    
+                    -- Chờ 0.5s để game bắt đầu cooldown
+                    task.wait(0.5)
                 else
-                    -- CHIÊU 3 ĐÃ HỒI XONG HOÀN TOÀN (cd3 == 0) -> MỚI ĐƯỢC PHÉP ĐÁNH 1 CÁI VÀ TUNG SKILL
-                    isExecutingCombo = true
-                    
-                    performPunch() -- Đấm ĐÚNG 1 CÁI
-                    task.wait(0.12)
-                    
-                    pressKey(Enum.KeyCode.Three) -- Tung Chiêu 3
-                    task.wait(0.4)
-                    
-                    -- Chờ cho tới khi hệ thống xác nhận chiêu 3 đã được dùng và đang bước vào Cooldown mới
-                    repeat 
-                        task.wait(0.1) 
-                    until getSkill3Cooldown() > 0 or not autoPunchSkillEnabled
-                    
-                    isExecutingCombo = false
+                    -- CHIÊU 3 ĐANG HỒI -> NẰM YÊN CHỜ HOÀN TOÀN, KHÔNG ĐẤM BẤT KỲ CÁI NÀO
+                    task.wait(0.1)
                 end
             end
         end
@@ -631,12 +632,10 @@ AutoPunchSkillBtn.MouseButton1Click:Connect(function()
     if autoPunchSkillEnabled then
         AutoPunchSkillBtn.Text = "🎯 Auto Loop Skill 3: ON"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
-        isExecutingCombo = false
         startAutoPunchSkillLoop()
     else
         AutoPunchSkillBtn.Text = "🎯 Auto Loop Skill 3: OFF"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-        isExecutingCombo = false
         if autoPunchSkillThread then
             task.cancel(autoPunchSkillThread)
             autoPunchSkillThread = nil
@@ -701,7 +700,6 @@ end)
 ---------------------------------------------------------
 LocalPlayer.CharacterAdded:Connect(function(char)
     isDying = false
-    isExecutingCombo = false
     
     local hum = char:WaitForChild("Humanoid", 3)
     if hum then Camera.CameraSubject = hum end
@@ -709,7 +707,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     setupHealthTracker(char)
     
     if antiLagEnabled then
-        task.wait(0.2)
+        task.wait(0.1)
         stripAndOptimizeCharacter(char)
     end
     
