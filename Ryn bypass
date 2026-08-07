@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 5.4 - STRICT SKILL 3 COOLDOWN & TIMING)
+-- TSB MULTI-TOOL SCRIPT (VERSION 5.5 - 1S DELAY BEFORE SKILL 3)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v5.4"
+VersionLabel.Text = "📌 TSB Tool v5.5"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -560,7 +560,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC COMBO (LẶP VĨNH CỬU - BẮT BUỘC ĐỜI CHIÊU 3 HỒI XONG MỚI ĐẤM)
+-- 5. LOGIC COMBO (CHỜ CHIÊU 3 HỒI -> ĐẤM 1 CÁI -> ĐỜI 1 GIÂY -> TUNG CHIÊU 3)
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -599,7 +599,7 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- LOGIC MỚI: CHỜ CHIÊU 3 HỒI HẲN BẰNG 0 MỚI CHO PHÉP ĐẤM + TUNG CHIÊU 3
+-- LOGIC MỚI: CHỜ CHIÊU 3 HỒI -> ĐẤM 1 CÁI -> CHỜ 1 GIÂY -> TUNG CHIÊU 3
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
@@ -611,11 +611,15 @@ local function startAutoPunchSkillLoop()
                 
                 -- Chỉ thực hiện khi Chiêu 3 HOÀN TOÀN HỒI XONG (cd3 == 0)
                 if cd3 == 0 then
-                    performPunch()           -- Tung 1 cú đấm
-                    task.wait(0.08)          -- Chờ cực ngắn
-                    pressKey(Enum.KeyCode.Three) -- Tung chiêu 3
+                    performPunch()               -- 1. Đấm 1 cái
+                    task.wait(1)                 -- 2. Đợi đúng 1 giây
                     
-                    -- Chờ 0.5s để game chuyển trạng thái Cooldown
+                    -- Kiểm tra lại xem target còn sống không trước khi xả chiêu
+                    if getValidAliveTarget() then
+                        pressKey(Enum.KeyCode.Three) -- 3. Tung chiêu 3
+                    end
+                    
+                    -- Chờ 0.5s để hệ thống cập nhật lại thời gian hồi chiêu
                     task.wait(0.5)
                 end
             end
