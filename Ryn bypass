@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 5.8 - FIXED SKILL 3 & 10S LOOP / 1S DELAY)
+-- TSB MULTI-TOOL SCRIPT (VERSION 5.9 - FIXED ANIMATION CANCELLING FOR SKILL 3)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v5.8"
+VersionLabel.Text = "📌 TSB Tool v5.9"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -139,13 +139,21 @@ Instance.new("UICorner", AutoPunchSkillBtn).CornerRadius = UDim.new(0, 8)
 ---------------------------------------------------------
 -- 2. LOGIC BẤM PHÍM & NHẤP CHUỘT
 ---------------------------------------------------------
--- HÀM MỚI: TĂNG ĐỘ CHẮC CHẮN KHI TUNG CHIÊU
 local function pressKey(keyCode)
     pcall(function()
         VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
-        task.wait(0.15)
+        task.wait(0.05)
         VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
     end)
+end
+
+-- HÀM NHẤP PHÍM LIÊN TỤC TRÁNH BỊ ANIMATION CHẶN
+local function spamKey(keyCode, duration)
+    local startTime = tick()
+    while tick() - startTime < duration do
+        pressKey(keyCode)
+        task.wait(0.05)
+    end
 end
 
 local function performPunch()
@@ -540,7 +548,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC COMBO: ĐẤM -> ĐỢI 1S -> CHIÊU 3 -> ĐỢI 10S -> LẶP LẠI
+-- 5. LOGIC COMBO: ĐẤM -> ĐỢI 1S -> SPAM CHIÊU 3 -> ĐỢI 10S -> LẶP LẠI
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -579,25 +587,25 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- LOGIC MỚI: ĐẤM -> ĐỢI 1S -> TUNG CHIÊU 3 (BẤM NHIỀU LẦN DỰ PHÒNG) -> ĐỢI 10S
+-- LOGIC CẬP NHẬT: ĐẤM -> ĐỢI 1S -> SPAM PHÍM 3 (0.5S) ĐỂ ÉP RA CHIÊU KHI VỪA HẾT ANIMATION
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
             local target = getValidAliveTarget()
             
             if target then
-                -- Step 1: Tung 1 cú đấm
+                -- 1. Đấm 1 cú
                 performPunch()
                 
-                -- Step 2: Đợi đúng 1 giây
+                -- 2. Chờ 1 giây cho animation đấm diễn ra
                 task.wait(1)
                 
-                -- Step 3: Tung Chiêu 3 (Thực hiện bấm phím 3 với kiểm tra độ trễ chuẩn)
+                -- 3. Nhấp nhả phím 3 liên tục trong 0.5s để tung chiêu ngay khi vừa hết animation đấm
                 if autoPunchSkillEnabled and getValidAliveTarget() then
-                    pressKey(Enum.KeyCode.Three)
+                    spamKey(Enum.KeyCode.Three, 0.5)
                 end
                 
-                -- Step 4: Chờ đúng 10 giây trước khi lặp lại
+                -- 4. Chờ 10 giây trước khi lặp lại đợt mới
                 task.wait(10)
             else
                 task.wait(0.2)
