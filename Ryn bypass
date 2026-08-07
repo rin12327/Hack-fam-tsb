@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 6.0 - PC & MOBILE HYBRID FIX FOR SKILL 3)
+-- TSB MULTI-TOOL SCRIPT (VERSION 6.1 - DIRECT REMOTE BYPASS FOR PC)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v6.0 (PC Fix)"
+VersionLabel.Text = "📌 TSB Tool v6.1 (Remote Fix)"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -137,38 +137,34 @@ AutoPunchSkillBtn.Parent = MainFrame
 Instance.new("UICorner", AutoPunchSkillBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
--- 2. HÀM TUNG CHIÊU HYBRID (KẾT HỢP PC & MOBILE LOGIC)
+-- 2. ĐỘT PHÁ PC: HÀM TRIGGER CHIÊU 3 QUA REMOTE & COMMUNICATOR
 ---------------------------------------------------------
-local function triggerSkill3()
+local function triggerSkill3Direct()
     pcall(function()
-        -- Cách 1: Bấm phím 3 trên PC qua VirtualInputManager
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Three, false, game)
-        task.wait(0.05)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Three, false, game)
-
-        -- Cách 2 (Dự phòng cho PC & Mobile): Tìm nút Chiêu 3 trên UI để Click
-        local hotbar = PlayerGui:FindFirstChild("Hotbar") or PlayerGui:FindFirstChild("MainGui") or PlayerGui:FindFirstChild("ScreenGui")
-        if hotbar then
-            for _, btn in ipairs(hotbar:GetDescendants()) do
-                if (btn:IsA("TextButton") or btn:IsA("ImageButton")) and (btn.Name == "3" or string.find(string.lower(btn.Name), "skill3")) then
-                    for _, conn in pairs(getconnections(btn.MouseButton1Click)) do
-                        conn:Fire()
-                    end
-                    for _, conn in pairs(getconnections(btn.Activated)) do
-                        conn:Fire()
-                    end
-                end
-            end
-        end
-
-        -- Cách 3: Activate Tool nếu chiêu nằm trong Backpack
         local char = LocalPlayer.Character
-        if char then
-            local tool = char:FindFirstChildOfClass("Tool")
-            if tool then
-                tool:Activate()
+        if not char then return end
+
+        -- Phương pháp 1: Gọi RemoteEvent trực tiếp của TSB (Nằm trong Character hoặc ReplicatedStorage)
+        local communicator = char:FindFirstChild("Communicate") or game:GetService("ReplicatedStorage"):FindFirstChild("Communicate")
+        if communicator and communicator:IsA("RemoteEvent") then
+            communicator:FireServer({Goal = "ConsoleKey", Key = Enum.KeyCode.Three})
+            communicator:FireServer({Goal = "KeyPress", Key = Enum.KeyCode.Three})
+            communicator:FireServer({Goal = "Skill", Tool = "3"})
+            communicator:FireServer({Goal = "ActivateSkill", Skill = 3})
+        end
+
+        -- Phương pháp 2: Duyệt tìm tất cả các RemoteEvent trong Character để gửi tín hiệu Chiêu 3
+        for _, obj in ipairs(char:GetDescendants()) do
+            if obj:IsA("RemoteEvent") then
+                obj:FireServer({Goal = "ConsoleKey", Key = Enum.KeyCode.Three})
+                obj:FireServer({Goal = "KeyPress", Key = Enum.KeyCode.Three})
             end
         end
+
+        -- Phương pháp 3: Gửi phím cứng dự phòng qua VirtualInputManager
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Three, false, game)
+        task.wait(0.02)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Three, false, game)
     end)
 end
 
@@ -564,7 +560,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC COMBO FIX PC
+-- 5. LOGIC COMBO CẬP NHẬT: ĐẤM -> ĐỢI 1S -> BƠM REMOTE CHIÊU 3
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -578,7 +574,7 @@ local function startAutoSkillLoop()
             task.wait(0.2)
             local target = getValidAliveTarget()
             if target then
-                triggerSkill3() -- Kích hoạt phím 1-2 bổ sung nếu cần
+                triggerSkill3Direct()
             end
         end
     end)
@@ -600,29 +596,28 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- LOGIC COMBO CẬP NHẬT TỚI PC: ĐẤM -> ĐỢI 1S -> SPAM CHIÊU 3 HYBRID (0.6S) -> ĐỢI 10S
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
             local target = getValidAliveTarget()
             
             if target then
-                -- Step 1: Đấm 1 cái
+                -- 1. Đấm 1 cái
                 performPunch()
                 
-                -- Step 2: Đợi đúng 1 giây
+                -- 2. Đợi đúng 1 giây
                 task.wait(1)
                 
-                -- Step 3: Kích hoạt Chiêu 3 liên tục trong 0.6s bằng hàm Hybrid (gửi phím + click UI)
+                -- 3. Gọi Remote tung Chiêu 3 trực tiếp liên tục trong 0.5 giây
                 if autoPunchSkillEnabled and getValidAliveTarget() then
                     local startTime = tick()
-                    while tick() - startTime < 0.6 do
-                        triggerSkill3()
-                        task.wait(0.08)
+                    while tick() - startTime < 0.5 do
+                        triggerSkill3Direct()
+                        task.wait(0.05)
                     end
                 end
                 
-                -- Step 4: Chờ đúng 10 giây rồi lặp lại
+                -- 4. Chờ đúng 10 giây rồi lặp lại
                 task.wait(10)
             else
                 task.wait(0.2)
