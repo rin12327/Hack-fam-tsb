@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 5.6 - 2S DELAY & SINGLE CLICK PUNCH)
+-- TSB MULTI-TOOL SCRIPT (VERSION 5.7 - FIXED SKILL 3 & FIXED 10.5S LOOP)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v5.6"
+VersionLabel.Text = "📌 TSB Tool v5.7"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -129,7 +129,7 @@ AutoPunchSkillBtn.Size = UDim2.new(0, 135, 0, 32)
 AutoPunchSkillBtn.Position = UDim2.new(0, 140, 0, 138)
 AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AutoPunchSkillBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoPunchSkillBtn.Text = "🎯 Auto Loop Skill 3: OFF"
+AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (10.5s): OFF"
 AutoPunchSkillBtn.Font = Enum.Font.GothamBold
 AutoPunchSkillBtn.TextSize = 10
 AutoPunchSkillBtn.Active = true
@@ -137,42 +137,22 @@ AutoPunchSkillBtn.Parent = MainFrame
 Instance.new("UICorner", AutoPunchSkillBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
--- 2. LOGIC BẤM PHÍM & TÌM MỤC TIÊU SỐNG
+-- 2. LOGIC BẤM PHÍM & NHẤP CHUỘT
 ---------------------------------------------------------
 local function pressKey(keyCode)
     pcall(function()
         VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
-        task.wait(0.05)
+        task.wait(0.1)
         VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
     end)
 end
 
--- SỬA: CHỈ NHẤP CƠ HỌC 1 LẦN NHƯ NGƯỜI CHƠI CHẠM MÀN HÌNH
 local function performPunch()
     pcall(function()
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
         task.wait(0.05)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
     end)
-end
-
-local function getSkill3Cooldown()
-    local remaining = 0
-    pcall(function()
-        local hotbar = PlayerGui:FindFirstChild("Hotbar") or PlayerGui:FindFirstChild("MainGui")
-        if hotbar then
-            for _, slot in ipairs(hotbar:GetDescendants()) do
-                if slot.Name == "3" or slot.Name == "Slot3" or string.find(slot.Name, "3") then
-                    local cdText = slot:FindFirstChildOfClass("TextLabel")
-                    if cdText and cdText.Visible then
-                        local num = tonumber(cdText.Text)
-                        if num then remaining = num end
-                    end
-                end
-            end
-        end
-    end)
-    return remaining
 end
 
 local function getValidAliveTarget()
@@ -559,7 +539,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC COMBO (CHỜ CHIÊU 3 HỒI -> ĐẤM 1 CÁI MỚI -> ĐỜI 2 GIÂY -> TUNG CHIÊU 3)
+-- 5. LOGIC COMBO CỐ ĐỊNH: ĐẤM -> ĐỢI 2S -> TUNG CHIÊU 3 -> ĐỢI 10.5S -> LẮP LẠI
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -598,29 +578,28 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- LOGIC MỚI: CHỜ CHIÊU 3 HỒI -> ĐẤM 1 CÁI CHUẨN MÀN HÌNH -> ĐỢI 2 GIÂY -> TUNG CHIÊU 3
+-- LOGIC MỚI: ĐẤM -> ĐỢI 2S -> CHIÊU 3 -> ĐỢI 10.5S -> LẶP LẠI
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
-            task.wait(0.1)
             local target = getValidAliveTarget()
             
             if target then
-                local cd3 = getSkill3Cooldown()
+                -- Step 1: Tung 1 cú đấm
+                performPunch()
                 
-                -- Chỉ đánh khi Chiêu 3 đã hoàn thành thời gian hồi (cd3 == 0)
-                if cd3 == 0 then
-                    performPunch()               -- 1. Đấm 1 cái tự nhiên
-                    task.wait(2)                 -- 2. Đợi đủ 2 giây (có khoảng cách)
-                    
-                    -- Kiểm tra xem đối thủ còn sống trước khi xả Chiêu 3
-                    if getValidAliveTarget() then
-                        pressKey(Enum.KeyCode.Three) -- 3. Tung chiêu 3
-                    end
-                    
-                    -- Chờ thêm 0.5s để hệ thống nhận diện thời gian hồi mới
-                    task.wait(0.5)
+                -- Step 2: Chờ 2 giây
+                task.wait(2)
+                
+                -- Step 3: Bấm phím 3 (Kiểm tra lại xem target còn sống không)
+                if autoPunchSkillEnabled and getValidAliveTarget() then
+                    pressKey(Enum.KeyCode.Three)
                 end
+                
+                -- Step 4: Chờ đúng 10.5 giây trước khi bắt đầu đợt mới
+                task.wait(10.5)
+            else
+                task.wait(0.2) -- Nếu không có đối thủ thì quét lại nhanh
             end
         end
     end)
@@ -629,11 +608,11 @@ end
 AutoPunchSkillBtn.MouseButton1Click:Connect(function()
     autoPunchSkillEnabled = not autoPunchSkillEnabled
     if autoPunchSkillEnabled then
-        AutoPunchSkillBtn.Text = "🎯 Auto Loop Skill 3: ON"
+        AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (10.5s): ON"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         startAutoPunchSkillLoop()
     else
-        AutoPunchSkillBtn.Text = "🎯 Auto Loop Skill 3: OFF"
+        AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (10.5s): OFF"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
         if autoPunchSkillThread then
             task.cancel(autoPunchSkillThread)
