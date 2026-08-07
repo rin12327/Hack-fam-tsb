@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 5.3 - ZERO EFFECTS & INFINITE LOOP)
+-- TSB MULTI-TOOL SCRIPT (VERSION 5.4 - PERFECT COMBO & ZERO LAG)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v5.3"
+VersionLabel.Text = "📌 TSB Tool v5.4"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -129,7 +129,7 @@ AutoPunchSkillBtn.Size = UDim2.new(0, 135, 0, 32)
 AutoPunchSkillBtn.Position = UDim2.new(0, 140, 0, 138)
 AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AutoPunchSkillBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoPunchSkillBtn.Text = "🎯 Auto Loop Skill 3: OFF"
+AutoPunchSkillBtn.Text = "🎯 Smart Combo 3-4: OFF"
 AutoPunchSkillBtn.Font = Enum.Font.GothamBold
 AutoPunchSkillBtn.TextSize = 10
 AutoPunchSkillBtn.Active = true
@@ -137,7 +137,7 @@ AutoPunchSkillBtn.Parent = MainFrame
 Instance.new("UICorner", AutoPunchSkillBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
--- 2. LOGIC BẤM PHÍM & TÌM MỤC TIÊU SỐNG
+-- 2. LOGIC BẤM PHÍM & KIỂM TRA MỤC TIÊU
 ---------------------------------------------------------
 local function pressKey(keyCode)
     pcall(function()
@@ -147,11 +147,12 @@ local function pressKey(keyCode)
     end)
 end
 
-local function performPunch()
+-- ĐẤM ĐÚNG 1 CÁI DUY NHẤT
+local function performSinglePunch()
     pcall(function()
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
         VirtualUser:Button1Down(Vector2.new(0, 0), Camera.CFrame)
-        task.wait(0.05)
+        task.wait(0.04)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
         VirtualUser:Button1Up(Vector2.new(0, 0), Camera.CFrame)
     end)
@@ -176,7 +177,7 @@ local function getSkill3Cooldown()
     return remaining
 end
 
-local function getValidAliveTarget()
+local function getValidTarget()
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
     local myPos = myChar.HumanoidRootPart.Position
@@ -187,18 +188,18 @@ local function getValidAliveTarget()
             local hum = targetChar:FindFirstChildOfClass("Humanoid")
             local hrp = targetChar:FindFirstChild("HumanoidRootPart") or targetChar:FindFirstChild("Torso")
             
-            if hum and hum.Health > 0 and hrp and not targetChar:FindFirstChildOfClass("ForceField") then
+            if hum and hrp and not targetChar:FindFirstChildOfClass("ForceField") then
                 if (hrp.Position - myPos).Magnitude <= 12 then
-                    return targetChar
+                    return targetChar, hum
                 end
             end
         end
     end
-    return nil
+    return nil, nil
 end
 
 ---------------------------------------------------------
--- 3. ANTI-LAG CỰC HẠN + ANTI-VOID FLOOR + NOCLIP + DAYTIME
+-- 3. ANTI-LAG CỰC HẠN + ANTI-VOID FLOOR + NOCLIP
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
@@ -363,7 +364,6 @@ local function enableAntiLag()
     end)
     table.insert(connections, conn)
 
-    -- SỬA LỖI HIỆU ỨNG CHIÊU TỰ PHÁT SINH: DIỆT HIỆU ỨNG THEO TỪNG FRAME
     if continuousCleanConnection then continuousCleanConnection:Disconnect() end
     continuousCleanConnection = RunService.RenderStepped:Connect(function()
         if antiLagEnabled then
@@ -479,7 +479,7 @@ end
 
 local function setupHealthTracker(char)
     if healthConn then healthConn:Disconnect() healthConn = nil end
-    if not char then return end
+    if not char me then return end
     
     local hum = char:WaitForChild("Humanoid", 3)
     if hum then
@@ -561,20 +561,21 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC COMBO (LẶP LIÊN TỤC VĨNH CỬU + ĐÚNG TIMING CHIÊU 3)
+-- 5. COMBO CHUẨN 100% THEO YÊU CẦU CỦA RONALDO
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
 
 local autoPunchSkillEnabled = false
 local autoPunchSkillThread = nil
+local isExecutingCombo = false
 
 local function startAutoSkillLoop()
     autoSkillThread = task.spawn(function()
         while autoSkillEnabled do
             task.wait(0.2)
-            local target = getValidAliveTarget()
-            if target then
+            local targetChar, targetHum = getValidTarget()
+            if targetChar and targetHum and targetHum.Health > 0 then
                 pressKey(Enum.KeyCode.One)
                 task.wait(0.3)
                 pressKey(Enum.KeyCode.Two)
@@ -600,27 +601,51 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- AUTO LOOP SKILL 3 VĨNH CỬU:
+-- LOGIC COMBO v5.4 CHUẨN XÁC:
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
             task.wait(0.05)
-            local target = getValidAliveTarget()
             
-            if target then
-                local cd3 = getSkill3Cooldown()
+            -- CHỈ CHẠY KHI BẮT ĐƯỢC MỤC TIÊU VÀ KHÔNG TRONG CHUỖI TUNG SKILL
+            if not isExecutingCombo then
+                local targetChar, targetHum = getValidTarget()
                 
-                if cd3 == 0 then
-                    -- CHIÊU 3 RẢNH (HỒI XONG) -> ĐẤM 1 CÁI -> XẢ CHIÊU 3 NGAY
-                    performPunch()
-                    task.wait(0.1)
-                    pressKey(Enum.KeyCode.Three)
+                if targetChar then
+                    local cd3 = getSkill3Cooldown()
                     
-                    -- Chờ 0.5s để game bắt đầu cooldown
-                    task.wait(0.5)
-                else
-                    -- CHIÊU 3 ĐANG HỒI -> NẰM YÊN CHỜ HOÀN TOÀN, KHÔNG ĐẤM BẤT KỲ CÁI NÀO
-                    task.wait(0.1)
+                    -- BƯỚC 1: BẮT BUỘC CHỜ CHIÊU 3 HỒI XONG (cd3 == 0) MỚI ĐƯỢC PHÉP ĐÁNH!
+                    if cd3 == 0 then
+                        isExecutingCombo = true
+                        
+                        -- BƯỚC 2: ĐẤM ĐÚNG 1 CÁI VÀ TUNG CHIÊU 3 TẬN MẶT
+                        performSinglePunch()
+                        task.wait(0.12)
+                        pressKey(Enum.KeyCode.Three)
+                        
+                        -- Chờ Chiêu 3 diễn ra (cho dù mục tiêu chết vẫn tung hết chiêu 3)
+                        task.wait(0.6)
+                        
+                        -- BƯỚC 3: KIỂM TRA MỤC TIÊU SAU KHI TUNG CHIÊU 3
+                        -- Kiểm tra lại xem mục tiêu còn tồn tại và còn sống không
+                        local currentTargetChar, currentTargetHum = getValidTarget()
+                        
+                        if currentTargetChar and currentTargetHum and currentTargetHum.Health > 0 then
+                            -- Nếu người còn sống ➔ Đánh THÊM ĐÚNG 1 CÁI ➔ Tung Chiêu 4
+                            performSinglePunch()
+                            task.wait(0.12)
+                            pressKey(Enum.KeyCode.Four)
+                            task.wait(0.5)
+                        end
+                        -- Nếu người đã chết ➔ Không đấm nữa, kết thúc combo!
+                        
+                        -- BƯỚC 4: BẮT BUỘC CHỜ HỆ THỐNG XÁC NHẬN CHIÊU 3 ĐANG HỒI RỒI MỚI RESET COMBO
+                        repeat
+                            task.wait(0.1)
+                        until getSkill3Cooldown() > 0 or not autoPunchSkillEnabled
+                        
+                        isExecutingCombo = false
+                    end
                 end
             end
         end
@@ -630,12 +655,14 @@ end
 AutoPunchSkillBtn.MouseButton1Click:Connect(function()
     autoPunchSkillEnabled = not autoPunchSkillEnabled
     if autoPunchSkillEnabled then
-        AutoPunchSkillBtn.Text = "🎯 Auto Loop Skill 3: ON"
+        AutoPunchSkillBtn.Text = "🎯 Smart Combo 3-4: ON"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        isExecutingCombo = false
         startAutoPunchSkillLoop()
     else
-        AutoPunchSkillBtn.Text = "🎯 Auto Loop Skill 3: OFF"
+        AutoPunchSkillBtn.Text = "🎯 Smart Combo 3-4: OFF"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        isExecutingCombo = false
         if autoPunchSkillThread then
             task.cancel(autoPunchSkillThread)
             autoPunchSkillThread = nil
@@ -700,6 +727,7 @@ end)
 ---------------------------------------------------------
 LocalPlayer.CharacterAdded:Connect(function(char)
     isDying = false
+    isExecutingCombo = false
     
     local hum = char:WaitForChild("Humanoid", 3)
     if hum then Camera.CameraSubject = hum end
