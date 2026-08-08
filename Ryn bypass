@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 6.6 - STRICT COOLDOWN LOCK)
+-- TSB MULTI-TOOL SCRIPT (VERSION 6.6 - ULTIMATE ANTI-LAG EXTREME)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -185,28 +185,13 @@ local function getValidAliveTarget()
 end
 
 ---------------------------------------------------------
--- 3. ANTI-LAG CỰC HẠN + ANTI-VOID FLOOR + NOCLIP + DAYTIME
+-- 3. EXTREME ANTI-LAG SYSTEM (KHÔNG HIỆU ỨNG, MAP TRỐNG, CAM TĨNH)
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
 local hiddenObjects = {}
 local noClipConnection = nil
-local continuousCleanConnection = nil
-
-local banKeywords = {
-    "tree", "bench", "trash", "chair", "table", "bush", "grass", "cloud", 
-    "rock", "prop", "destructible", "breakable", "building", "wall", "fence",
-    "dash", "vfx", "fx", "aura", "slash", "particle", "eff", "impact", "shockwave",
-    "smoke", "dust", "debris", "blast", "hit", "ring", "wave", "emit"
-}
-
-local function isBannedName(name)
-    local lowerName = string.lower(name)
-    for _, kw in ipairs(banKeywords) do
-        if string.find(lowerName, kw) then return true end
-    end
-    return false
-end
+local cameraLockConnection = nil
 
 local function isCharacterObject(obj)
     if not obj then return false end
@@ -233,6 +218,7 @@ local function createAntiVoidFloor()
     end
 end
 
+-- Tối ưu triệt để nhân vật (Lột trần, xóa hiệu ứng, xóa animation)
 local function stripAndOptimizeCharacter(char)
     if not char then return end
     pcall(function()
@@ -247,15 +233,17 @@ local function stripAndOptimizeCharacter(char)
                 child.Reflectance = 0
                 child.CastShadow = false
                 
+                -- Giữ thân người hiện diện dạng khối SmoothPlastic
                 if child.Name == "Left Arm" or child.Name == "Right Arm" or child.Name == "Left Leg" or child.Name == "Right Leg"
                    or child.Name == "LeftUpperArm" or child.Name == "RightUpperArm" or child.Name == "LeftLowerArm" or child.Name == "RightLowerArm"
                    or child.Name == "LeftHand" or child.Name == "RightHand" or child.Name == "LeftUpperLeg" or child.Name == "RightUpperLeg"
                    or child.Name == "LeftLowerLeg" or child.Name == "RightLowerLeg" or child.Name == "LeftFoot" or child.Name == "RightFoot" then
-                    child.Transparency = 1
+                    child.Transparency = 0
                 end
             end
         end
         
+        -- Vô hiệu hóa Animation để không bị rung lắc, giật lag khung hình
         local animate = char:FindFirstChild("Animate")
         if animate then animate.Disabled = true end
         
@@ -267,6 +255,7 @@ local function stripAndOptimizeCharacter(char)
     end)
 end
 
+-- Xử lý đối tượng Map và Hiệu ứng TSB
 local function processObject(obj)
     if not obj or not antiLagEnabled then return end
     pcall(function()
@@ -274,18 +263,16 @@ local function processObject(obj)
 
         if isCharacterObject(obj) then return end
 
-        if isBannedName(obj.Name) or obj:IsA("Clouds") or obj:IsA("Explosion") then
-            obj:Destroy()
-            return
-        end
-
+        -- Tiêu diệt tuyệt đối mọi hiệu ứng, khói, lửa, vfx, hiệu ứng skill
         if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") 
             or obj:IsA("Fire") or obj:IsA("Sparkles") or obj:IsA("Highlight") 
-            or obj:IsA("Beam") or obj:IsA("Decal") or obj:IsA("Texture") then
+            or obj:IsA("Beam") or obj:IsA("Decal") or obj:IsA("Texture")
+            or obj:IsA("Explosion") or obj:IsA("Clouds") then
             obj:Destroy()
             return
         end
 
+        -- Biến toàn bộ map thành vô hình để tạo Map Trống hoàn toàn
         if obj:IsA("BasePart") or obj:IsA("MeshPart") then
             if not hiddenObjects[obj] then
                 hiddenObjects[obj] = {
@@ -300,6 +287,7 @@ local function processObject(obj)
             obj.CastShadow = false
             obj.Transparency = 1
             obj.CanCollide = false
+            obj.CanTouch = false
         end
     end)
 end
@@ -308,28 +296,23 @@ local function enableAntiLag()
     antiLagEnabled = true
     createAntiVoidFloor()
     
+    -- Tối ưu Lighting & Bầu trời
     pcall(function()
         Lighting.GlobalShadows = false
         Lighting.FogEnd = 9e9
         Lighting.Brightness = 1
         Lighting.ClockTime = 12
         for _, v in ipairs(Lighting:GetChildren()) do
-            if v:IsA("Clouds") or v:IsA("Sky") or v:IsA("PostEffect") or v:IsA("Atmosphere") then 
+            if v:IsA("Clouds") or v:IsA("Sky") or v:IsA("PostEffect") or v:IsA("Atmosphere") or v:IsA("BloomEffect") then 
                 v:Destroy() 
             end
         end
         if Workspace.Terrain then Workspace.Terrain:Clear() end
     end)
 
+    -- Áp dụng cho các nhân vật hiện tại và tương lai
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr.Character then stripAndOptimizeCharacter(plr.Character) end
-        local pConn = plr.CharacterAdded:Connect(function(char)
-            if antiLagEnabled then
-                task.wait(0.1)
-                stripAndOptimizeCharacter(char)
-            end
-        end)
-        table.insert(connections, pConn)
     end
     
     local plrJoinedConn = Players.PlayerAdded:Connect(function(plr)
@@ -343,26 +326,31 @@ local function enableAntiLag()
     end)
     table.insert(connections, plrJoinedConn)
 
+    -- Dọn dẹp map hiện tại
     for _, v in ipairs(Workspace:GetDescendants()) do processObject(v) end
     
+    -- Lắng nghe rác/vfx mới sinh ra và xóa lập tức (Không gây giật lag)
     local conn = Workspace.DescendantAdded:Connect(function(child)
-        if antiLagEnabled then task.spawn(function() processObject(child) end) end
+        if antiLagEnabled then 
+            task.defer(function() processObject(child) end) 
+        end
     end)
     table.insert(connections, conn)
 
-    if continuousCleanConnection then continuousCleanConnection:Disconnect() end
-    continuousCleanConnection = RunService.RenderStepped:Connect(function()
-        if antiLagEnabled then
-            for _, obj in ipairs(Workspace:GetChildren()) do
-                if not isCharacterObject(obj) and obj.Name ~= "AntiVoidSafetyFloor" and not obj:IsA("Camera") and not obj:IsA("Terrain") then
-                    if isBannedName(obj.Name) or obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Highlight") or obj:IsA("Beam") then
-                        obj:Destroy()
-                    end
-                end
+    -- Khóa Camera chống giật rung lắc khi chiêu nhào lộn
+    if cameraLockConnection then cameraLockConnection:Disconnect() end
+    cameraLockConnection = RunService.RenderStepped:Connect(function()
+        if antiLagEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = LocalPlayer.Character.HumanoidRootPart
+            Camera.CameraType = Enum.CameraType.Custom
+            -- Cố định vị trí góc nhìn mượt mà theo RootPart
+            if Camera.CameraSubject ~= LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
             end
         end
     end)
 
+    -- NoClip Xuyên Tất Cả Khối
     if noClipConnection then noClipConnection:Disconnect() end
     noClipConnection = RunService.Stepped:Connect(function()
         if antiLagEnabled and LocalPlayer.Character then
@@ -382,7 +370,7 @@ local function disableAntiLag()
     connections = {}
     
     if noClipConnection then noClipConnection:Disconnect() noClipConnection = nil end
-    if continuousCleanConnection then continuousCleanConnection:Disconnect() continuousCleanConnection = nil end
+    if cameraLockConnection then cameraLockConnection:Disconnect() cameraLockConnection = nil end
 
     for obj, data in pairs(hiddenObjects) do
         if obj and obj.Parent then
