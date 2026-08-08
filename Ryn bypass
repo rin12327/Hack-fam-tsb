@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 6.2 - INSTANT VOID REBOUND -1000)
+-- TSB MULTI-TOOL SCRIPT (VERSION 6.3 - STRICT SKILL 3 COOLDOWN & NO-DEBRIS)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v6.2"
+VersionLabel.Text = "📌 TSB Tool v6.3"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -129,7 +129,7 @@ AutoPunchSkillBtn.Size = UDim2.new(0, 135, 0, 32)
 AutoPunchSkillBtn.Position = UDim2.new(0, 140, 0, 138)
 AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AutoPunchSkillBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (Fast): OFF"
+AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (CD): OFF"
 AutoPunchSkillBtn.Font = Enum.Font.GothamBold
 AutoPunchSkillBtn.TextSize = 10
 AutoPunchSkillBtn.Active = true
@@ -137,7 +137,7 @@ AutoPunchSkillBtn.Parent = MainFrame
 Instance.new("UICorner", AutoPunchSkillBtn).CornerRadius = UDim.new(0, 8)
 
 ---------------------------------------------------------
--- 2. LOGIC BẤM PHÍM & NHẤP CHUỘT
+-- 2. LOGIC BẤM PHÍM, KIỂM TRA SKILL HỒI & NHẤP CHUỘT
 ---------------------------------------------------------
 local function pressKey(keyCode)
     pcall(function()
@@ -163,6 +163,29 @@ local function performPunch()
     end)
 end
 
+-- Hàm kiểm tra xem Skill 3 trong TSB đã hồi hoàn toàn chưa (Cooldown = 0)
+local function isSkill3Ready()
+    local ready = false
+    pcall(function()
+        local hotbar = PlayerGui:FindFirstChild("Hotbar") or PlayerGui:FindFirstChild("MainHotbar")
+        if hotbar then
+            for _, item in ipairs(hotbar:GetDescendants()) do
+                if item.Name == "3" or item.Text == "3" or string.find(string.lower(item.Name), "slot3") then
+                    local cdFrame = item:FindFirstChild("Cooldown") or item:FindFirstChild("CD") or item:FindFirstChild("Lock")
+                    if cdFrame then
+                        if cdFrame:IsA("GuiObject") and cdFrame.Visible and cdFrame.Size.Y.Scale > 0.05 then
+                            ready = false
+                            return
+                        end
+                    end
+                end
+            end
+        end
+        ready = true
+    end)
+    return ready
+end
+
 local function getValidAliveTarget()
     local myChar = LocalPlayer.Character
     if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return nil end
@@ -185,7 +208,7 @@ local function getValidAliveTarget()
 end
 
 ---------------------------------------------------------
--- 3. ANTI-LAG CỰC HẠN + ANTI-VOID FLOOR + NOCLIP + DAYTIME
+-- 3. ANTI-LAG CỰC HẠN + DIỆT ĐẤT ĐÁ HIỆU ỨNG CHIÊU + NOCLIP
 ---------------------------------------------------------
 local antiLagEnabled = false
 local connections = {}
@@ -193,11 +216,13 @@ local hiddenObjects = {}
 local noClipConnection = nil
 local continuousCleanConnection = nil
 
+-- Thêm đầy đủ từ khóa đất đá, hiệu ứng phát sinh khi tung chiêu
 local banKeywords = {
     "tree", "bench", "trash", "chair", "table", "bush", "grass", "cloud", 
-    "rock", "prop", "destructible", "breakable", "building", "wall", "fence",
-    "dash", "vfx", "fx", "aura", "slash", "particle", "eff", "impact", "shockwave",
-    "smoke", "dust", "debris", "blast", "hit", "ring", "wave", "emit"
+    "rock", "stone", "earth", "ground", "debris", "dirt", "prop", "destructible", 
+    "breakable", "building", "wall", "fence", "dash", "vfx", "fx", "aura", 
+    "slash", "particle", "eff", "impact", "shockwave", "smoke", "dust", 
+    "blast", "hit", "ring", "wave", "emit", "crater", "rubble", "fragment"
 }
 
 local function isBannedName(name)
@@ -434,7 +459,6 @@ local healthConn = nil
 local lastHealth = 100
 local isDying = false
 
--- HÀM SỬA ĐỔI: TELEPORT XUỐNG Y = -1000 RỒI KÉO VỀ VỊ TRÍ CŨ NGAY LẬP TỨC
 local function triggerInstantVoidDeath()
     if isDying then return end
     isDying = true
@@ -454,15 +478,9 @@ local function triggerInstantVoidDeath()
             
             if hrp then
                 local oldCFrame = hrp.CFrame
-                
-                -- 1. Giật ngay xuống Y = -1000 để đụng vạch Void Kill Zone
                 hrp.CFrame = CFrame.new(oldCFrame.Position.X, -1000, oldCFrame.Position.Z)
-                
-                -- 2. Đặt máu = 0 và ngắt khớp nhân vật
                 if hum then hum.Health = 0 end
                 char:BreakJoints()
-                
-                -- 3. Đưa CFrame về vị trí ban đầu trong cùng 1 frame
                 hrp.CFrame = oldCFrame
             end
         end)
@@ -553,7 +571,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC COMBO: ĐẤM -> ĐỢI 1.5S -> SPAM CHIÊU 3 -> KHÔNG ĐỜI 10S
+-- 5. LOGIC COMBO CẬP NHẬT: SKILL 3 HỒI MỚI ĐÁNH -> ĐẤM -> BẮT BUỘC TUNG SKILL 3 -> CHỜ HỒI ĐẦY DỦ
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -595,16 +613,28 @@ end)
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
-            local target = getValidAliveTarget()
-            
-            if target then
-                performPunch()
-                task.wait(1.5)
-                
-                if autoPunchSkillEnabled then
-                    spamKey(Enum.KeyCode.Three, 0.5)
+            -- Kiểm tra xem Skill 3 có sẵn sàng (hết cooldown) chưa
+            if isSkill3Ready() then
+                local target = getValidAliveTarget()
+                if target then
+                    -- 1. Bắt đầu đấm
+                    performPunch()
+                    
+                    -- 2. Chờ 1.5 giây đúng nhịp combo
+                    task.wait(1.5)
+                    
+                    -- 3. Bắt buộc tung Chiêu 3
+                    if autoPunchSkillEnabled then
+                        spamKey(Enum.KeyCode.Three, 0.5)
+                    end
+                    
+                    -- 4. Chờ 1 chút để chiêu kích hoạt & vào trạng thái Cooldown
+                    task.wait(0.5)
+                else
+                    task.wait(0.1)
                 end
             else
+                -- Chiêu chưa hồi xong -> Đứng chờ, không làm gì cả
                 task.wait(0.1)
             end
         end
@@ -614,11 +644,11 @@ end
 AutoPunchSkillBtn.MouseButton1Click:Connect(function()
     autoPunchSkillEnabled = not autoPunchSkillEnabled
     if autoPunchSkillEnabled then
-        AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (Fast): ON"
+        AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (CD): ON"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         startAutoPunchSkillLoop()
     else
-        AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (Fast): OFF"
+        AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (CD): OFF"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
         if autoPunchSkillThread then
             task.cancel(autoPunchSkillThread)
