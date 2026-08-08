@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 6.4 - CUSTOM DELAY SKILL 3)
+-- TSB MULTI-TOOL SCRIPT (VERSION 6.5 - PERFECT COOLDOWN CHECK)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v6.4"
+VersionLabel.Text = "📌 TSB Tool v6.5"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -184,28 +184,43 @@ local function getValidAliveTarget()
     return nil
 end
 
+-- HÀM KIỂM TRA CHÍNH XÁC CHIÊU 3 ĐÃ HỒI CHƯA
 local function isSkill3Ready()
     local ready = true
     pcall(function()
-        local hotbar = PlayerGui:FindFirstChild("Hotbar") or PlayerGui:FindFirstChild("Main")
+        local hotbar = PlayerGui:FindFirstChild("Hotbar") or PlayerGui:FindFirstChild("Main") or PlayerGui:FindFirstChild("ScreenGui")
         if hotbar then
-            for _, v in ipairs(hotbar:GetDescendants()) do
-                if (v.Name == "3" or v.Name == "Skill3" or v.Text == "3") then
-                    local parentFrame = v.Parent
-                    if parentFrame then
-                        local cd = parentFrame:FindFirstChild("Cooldown") or parentFrame:FindFirstChild("CoolingDown") or parentFrame:FindFirstChild("Disabled")
-                        if cd and (cd.Visible or (cd:IsA("NumberValue") and cd.Value > 0)) then
-                            ready = false
+            for _, obj in ipairs(hotbar:GetDescendants()) do
+                -- Tìm ô chứa skill 3
+                if (obj.Name == "3" or obj.Text == "3" or string.find(string.lower(obj.Name), "skill3")) then
+                    local container = obj:IsA("GuiObject") and obj or obj.Parent
+                    if container then
+                        -- Kiểm tra toàn bộ các đối tượng đếm ngược / che mờ UI
+                        for _, child in ipairs(container:GetDescendants()) do
+                            local name = string.lower(child.Name)
+                            if string.find(name, "cooldown") or string.find(name, "cd") or string.find(name, "lock") then
+                                if child:IsA("Frame") or child:IsA("ImageLabel") or child:IsA("TextLabel") then
+                                    if child.Visible and child.BackgroundTransparency < 0.9 then
+                                        ready = false
+                                        return
+                                    end
+                                elseif child:IsA("ValueBase") and child.Value > 0 then
+                                    ready = false
+                                    return
+                                end
+                            end
                         end
                     end
                 end
             end
         end
         
+        -- Kiểm tra cooldown/stun gắn trên Character
         local char = LocalPlayer.Character
         if char then
-            local cdObj = char:FindFirstChild("Skill3Cooldown") or char:FindFirstChild("Cooldown3")
-            if cdObj then ready = false end
+            if char:FindFirstChild("Skill3Cooldown") or char:FindFirstChild("Cooldown3") or char:FindFirstChild("Stun") or char:FindFirstChild("Busy") then
+                ready = false
+            end
         end
     end)
     return ready
@@ -573,7 +588,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC COMBO: CHỜ CHIÊU 3 HỒI -> ĐẤM -> SPAM CHIÊU 3
+-- 5. LOGIC COMBO: CHỜ HỒI CHIÊU 3 -> ĐẤM -> CHỜ 0.90S -> TUNG CHIÊU 3
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -612,8 +627,8 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- LOGIC SKILL 3: CHỦ ĐỘNG THAY ĐỔI ĐỘ TRỄ NẾU MUỐN
-local SKILL_3_DELAY = 0.15 -- BẠN CÓ THỂ ĐỔI CON SỐ NÀY (VD: 0.1 HOẶC 0.08)
+-- LOGIC SKILL 3: CHỜ CHIÊU 3 HỒI 100% -> ĐẤM THƯỜNG -> NGHỈ 0.90S -> TUNG CHIÊU 3
+local SKILL_3_DELAY = 0.90 
 
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
@@ -621,16 +636,17 @@ local function startAutoPunchSkillLoop()
             local target = getValidAliveTarget()
             
             if target then
+                -- Vòng lặp chờ tới khi Chiêu 3 hoàn toàn hồi xong
                 while autoPunchSkillEnabled and not isSkill3Ready() do
-                    task.wait(0.1)
+                    task.wait(0.05)
                 end
                 
                 target = getValidAliveTarget()
                 if autoPunchSkillEnabled and target and isSkill3Ready() then
-                    performPunch()
-                    task.wait(SKILL_3_DELAY) -- Sử dụng biến độ trễ
+                    performPunch()           -- Đấm thường
+                    task.wait(SKILL_3_DELAY) -- Chờ đúng 0.90 giây
                     
-                    spamKey(Enum.KeyCode.Three, 0.4)
+                    spamKey(Enum.KeyCode.Three, 0.4) -- Tung chiêu 3
                     task.wait(1)
                 end
             else
