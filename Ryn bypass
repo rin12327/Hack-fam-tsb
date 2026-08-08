@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 6.0 - FIXED SKILL 3 AUTO TIMING)
+-- TSB MULTI-TOOL SCRIPT (VERSION 6.2 - INSTANT VOID REBOUND -1000)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v6.0"
+VersionLabel.Text = "📌 TSB Tool v6.2"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -129,7 +129,7 @@ AutoPunchSkillBtn.Size = UDim2.new(0, 135, 0, 32)
 AutoPunchSkillBtn.Position = UDim2.new(0, 140, 0, 138)
 AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 AutoPunchSkillBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (10s): OFF"
+AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (Fast): OFF"
 AutoPunchSkillBtn.Font = Enum.Font.GothamBold
 AutoPunchSkillBtn.TextSize = 10
 AutoPunchSkillBtn.Active = true
@@ -412,7 +412,7 @@ AntiLagBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 4. FREEZE LOGIC (-2000 VOID DEATH)
+-- 4. FREEZE LOGIC (-1000 VOID INSTANT REBOUND DEATH)
 ---------------------------------------------------------
 local targetCFrame1 = CFrame.new(
     439.180542, 439.511902, -375.309557,
@@ -434,6 +434,7 @@ local healthConn = nil
 local lastHealth = 100
 local isDying = false
 
+-- HÀM SỬA ĐỔI: TELEPORT XUỐNG Y = -1000 RỒI KÉO VỀ VỊ TRÍ CŨ NGAY LẬP TỨC
 local function triggerInstantVoidDeath()
     if isDying then return end
     isDying = true
@@ -452,13 +453,18 @@ local function triggerInstantVoidDeath()
             end
             
             if hrp then
-                hrp.AssemblyLinearVelocity = Vector3.new(0, -2000, 0)
-                hrp.AssemblyAngularVelocity = Vector3.zero
-                hrp.CFrame = CFrame.new(hrp.Position.X, -2000, hrp.Position.Z)
+                local oldCFrame = hrp.CFrame
+                
+                -- 1. Giật ngay xuống Y = -1000 để đụng vạch Void Kill Zone
+                hrp.CFrame = CFrame.new(oldCFrame.Position.X, -1000, oldCFrame.Position.Z)
+                
+                -- 2. Đặt máu = 0 và ngắt khớp nhân vật
+                if hum then hum.Health = 0 end
+                char:BreakJoints()
+                
+                -- 3. Đưa CFrame về vị trí ban đầu trong cùng 1 frame
+                hrp.CFrame = oldCFrame
             end
-            
-            if hum then hum.Health = 0 end
-            char:BreakJoints()
         end)
     end
 end
@@ -547,7 +553,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC COMBO: ĐẤM -> ĐỢI 2S -> TUNG CHIÊU 3 -> ĐỢI 10S -> LẶP LẠI
+-- 5. LOGIC COMBO: ĐẤM -> ĐỢI 1.5S -> SPAM CHIÊU 3 -> KHÔNG ĐỜI 10S
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -586,28 +592,20 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- LOGIC MỚI: CHỈ CHECK MỤC TIÊU ĐỂ ĐẤM THƯỜNG -> ĐỢI ĐÚNG 2S -> SPAM CHIÊU 3 (KHÔNG CHECK ĐIỀU KIỆN GÌ NỮA)
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
             local target = getValidAliveTarget()
             
             if target then
-                -- 1. Chỉ check mục tiêu để đánh cú đấm thường
                 performPunch()
+                task.wait(1.5)
                 
-                -- 2. Chờ đúng 2 giây (không cần check người chơi hay khoảng cách)
-                task.wait(2)
-                
-                -- 3. Tung chiêu 3 luôn bằng cách spam phím 3 trong 0.5s
                 if autoPunchSkillEnabled then
                     spamKey(Enum.KeyCode.Three, 0.5)
                 end
-                
-                -- 4. Chờ 10 giây trước khi lặp lại đợt mới
-                task.wait(10)
             else
-                task.wait(0.2)
+                task.wait(0.1)
             end
         end
     end)
@@ -616,11 +614,11 @@ end
 AutoPunchSkillBtn.MouseButton1Click:Connect(function()
     autoPunchSkillEnabled = not autoPunchSkillEnabled
     if autoPunchSkillEnabled then
-        AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (10s): ON"
+        AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (Fast): ON"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         startAutoPunchSkillLoop()
     else
-        AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (10s): OFF"
+        AutoPunchSkillBtn.Text = "🎯 Loop Skill 3 (Fast): OFF"
         AutoPunchSkillBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
         if autoPunchSkillThread then
             task.cancel(autoPunchSkillThread)
