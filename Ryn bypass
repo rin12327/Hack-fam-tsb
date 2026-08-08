@@ -1,5 +1,5 @@
 -- =========================================================
--- TSB MULTI-TOOL SCRIPT (VERSION 6.3 - FIX SKILL 3 COOLDOWN)
+-- TSB MULTI-TOOL SCRIPT (VERSION 6.4 - CUSTOM DELAY SKILL 3)
 -- =========================================================
 
 local Players = game:GetService("Players")
@@ -57,7 +57,7 @@ VersionLabel.Size = UDim2.new(0, 135, 0, 25)
 VersionLabel.Position = UDim2.new(0, 0, 0, 0)
 VersionLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 VersionLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-VersionLabel.Text = "📌 TSB Tool v6.3"
+VersionLabel.Text = "📌 TSB Tool v6.4"
 VersionLabel.Font = Enum.Font.GothamBold
 VersionLabel.TextSize = 11
 VersionLabel.Active = false
@@ -184,7 +184,6 @@ local function getValidAliveTarget()
     return nil
 end
 
--- HÀM KIỂM TRA SKILL 3 ĐÃ HỒI CHƯA
 local function isSkill3Ready()
     local ready = true
     pcall(function()
@@ -613,28 +612,26 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- LOGIC SỬA ĐỔI CHUẨN XÁC: ĐỢI HỒI XONG -> ĐẤM THƯỜNG -> DÙNG CHIÊU 3
+-- LOGIC SKILL 3: CHỦ ĐỘNG THAY ĐỔI ĐỘ TRỄ NẾU MUỐN
+local SKILL_3_DELAY = 0.15 -- BẠN CÓ THỂ ĐỔI CON SỐ NÀY (VD: 0.1 HOẶC 0.08)
+
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
             local target = getValidAliveTarget()
             
             if target then
-                -- Step 1: Chờ cho tới khi Chiêu 3 hồi xong hẳn
                 while autoPunchSkillEnabled and not isSkill3Ready() do
                     task.wait(0.1)
                 end
                 
-                -- Đảm bảo vẫn có target khi đã hồi xong
                 target = getValidAliveTarget()
                 if autoPunchSkillEnabled and target and isSkill3Ready() then
-                    -- Step 2: Đánh thường (M1)
                     performPunch()
-                    task.wait(0.15) -- Khoảng hoãn ngắn giữa M1 và Chiêu 3
+                    task.wait(SKILL_3_DELAY) -- Sử dụng biến độ trễ
                     
-                    -- Step 3: Tung chiêu 3 ngay
                     spamKey(Enum.KeyCode.Three, 0.4)
-                    task.wait(1) -- Chờ chiêu phát sinh hiệu ứng
+                    task.wait(1)
                 end
             else
                 task.wait(0.1)
