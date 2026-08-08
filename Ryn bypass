@@ -184,45 +184,6 @@ local function getValidAliveTarget()
     return nil
 end
 
--- KIỂM TRA CHÍNH XÁC CHIÊU 3 ĐÃ SẴN SÀNG CHƯA
-local function isSkill3Ready()
-    local isReady = true
-    pcall(function()
-        local hotbar = PlayerGui:FindFirstChild("Hotbar") or PlayerGui:FindFirstChild("Main") or PlayerGui:FindFirstChild("ScreenGui")
-        if hotbar then
-            for _, obj in ipairs(hotbar:GetDescendants()) do
-                if (obj.Name == "3" or obj.Text == "3" or string.find(string.lower(obj.Name), "skill3")) then
-                    local container = obj:IsA("GuiObject") and obj or obj.Parent
-                    if container then
-                        for _, child in ipairs(container:GetDescendants()) do
-                            local name = string.lower(child.Name)
-                            if string.find(name, "cooldown") or string.find(name, "cd") or string.find(name, "lock") then
-                                if child:IsA("Frame") or child:IsA("ImageLabel") or child:IsA("TextLabel") then
-                                    if child.Visible and child.BackgroundTransparency < 0.8 then
-                                        isReady = false
-                                        return
-                                    end
-                                elseif child:IsA("ValueBase") and child.Value > 0 then
-                                    isReady = false
-                                    return
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        
-        local char = LocalPlayer.Character
-        if char then
-            if char:FindFirstChild("Skill3Cooldown") or char:FindFirstChild("Cooldown3") or char:FindFirstChild("Stun") or char:FindFirstChild("Busy") then
-                isReady = false
-            end
-        end
-    end)
-    return isReady
-end
-
 ---------------------------------------------------------
 -- 3. ANTI-LAG CỰC HẠN + ANTI-VOID FLOOR + NOCLIP + DAYTIME
 ---------------------------------------------------------
@@ -585,7 +546,7 @@ FreezeOnlyBtn.MouseButton1Click:Connect(function()
 end)
 
 ---------------------------------------------------------
--- 5. LOGIC SMART SKILL 3 (KHIẾN ĐẤM & CHIÊU BỊ KHÓA NẾU CHƯA HỒI)
+-- 5. LOGIC SMART SKILL 3 (ĐÁNH M1 -> ĐỜI 0.8S -> CHIÊU 3 -> ĐỜI 10.5S)
 ---------------------------------------------------------
 local autoSkillEnabled = false
 local autoSkillThread = nil
@@ -624,30 +585,25 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- THỜI GIAN TRỄ GIỮA ĐẤM THƯỜNG VÀ TUNG CHIÊU 3
-local SKILL_3_DELAY = 0.90 
+-- THỜI GIAN CẤU HÌNH COMBO SMART SKILL 3
+local HIT_TO_SKILL_DELAY = 0.8  -- Đợi 0.8 giây giữa đánh thường M1 và chiêu 3
+local COMBO_LOOP_DELAY = 10.5   -- Đợi 10.5 giây sau khi xả chiêu rồi mới lặp lại combo
 
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
         while autoPunchSkillEnabled do
-            -- 1. BẮT BUỘC BÌNH TĨNH CHỜ CHIÊU 3 HỒI 100% MỚI CHO LÀM BẤT KỲ ĐIỀU GÌ
-            if not isSkill3Ready() then
-                task.wait(0.1)
+            local target = getValidAliveTarget()
+            if target then
+                -- Thực hiện Combo
+                performPunch()                    -- 1. Đấm M1
+                task.wait(HIT_TO_SKILL_DELAY)     -- 2. Chờ 0.8 giây
+                
+                spamKey(Enum.KeyCode.Three, 0.4)  -- 3. Xả Chiêu 3
+                
+                -- 4. Chờ 10.5 giây trước khi thực hiện lượt combo tiếp theo
+                task.wait(COMBO_LOOP_DELAY)
             else
-                -- 2. KHI CHIÊU 3 ĐÃ HỒI, MỚI BẮT ĐẦU TÌM ĐỐI THỦ HỢP LỆ (ĐÃ HẾT BẤT TỬ)
-                local target = getValidAliveTarget()
-                if target then
-                    -- 3. XÁC NHẬN LẠI MỘT LẦN NỮA MỌI ĐIỀU KIỆN RỒI MỚI TUNG ĐÒN
-                    if autoPunchSkillEnabled and isSkill3Ready() then
-                        performPunch()           -- Đấm M1
-                        task.wait(SKILL_3_DELAY) -- Chờ 0.90s
-                        
-                        spamKey(Enum.KeyCode.Three, 0.4) -- Xả Chiêu 3
-                        task.wait(1.2)           -- Nghỉ ngắn để server ghi nhận cooldown
-                    end
-                else
-                    task.wait(0.05)
-                end
+                task.wait(0.05)
             end
         end
     end)
