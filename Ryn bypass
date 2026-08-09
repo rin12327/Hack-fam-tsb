@@ -574,8 +574,8 @@ AutoSkillBtn.MouseButton1Click:Connect(function()
 end)
 
 -- THỜI GIAN CẤU HÌNH COMBO SMART SKILL 3
-local HIT_TO_SKILL_DELAY = 0.8  -- Đợi 0.8 giây giữa đánh thường M1 và chiêu 3
-local COMBO_LOOP_DELAY = 10.5   -- Đợi 10.5 giây sau khi xả chiêu rồi mới lặp lại combo
+local HIT_TO_SKILL_DELAY = 0.6  -- Đợi 0.8 giây giữa đánh thường M1 và chiêu 3
+local COMBO_LOOP_DELAY = 10   -- Đợi 10.5 giây sau khi xả chiêu rồi mới lặp lại combo
 
 local function startAutoPunchSkillLoop()
     autoPunchSkillThread = task.spawn(function()
